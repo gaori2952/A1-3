@@ -1,6 +1,7 @@
+import json
+import unittest
 from html.parser import HTMLParser
 from pathlib import Path
-import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,6 +36,14 @@ class SettingsCanvasTests(unittest.TestCase):
         self.assertIn("new Intl.DateTimeFormat('ko-KR'", canvas_source)
         self.assertIn("document.createElement('input')", canvas_source)
         self.assertNotIn("localStorage", canvas_source)
+
+    def test_vercel_uses_file_based_api_routing(self):
+        config = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))
+        pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+
+        self.assertNotIn("functions", config)
+        self.assertNotIn("rewrites", config)
+        self.assertIn('entrypoint = "api.index:handler"', pyproject)
 
 
 if __name__ == "__main__":
