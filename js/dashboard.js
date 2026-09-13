@@ -5,14 +5,14 @@ if (!session) throw new Error('No session');
 wireLogout();
 const state = getState();
 const today = todayKey();
-const typeLabels = { study: '공부', development: '개발', research: '연구', content: '콘텐츠', personal: '개인', other: '기타' };
+const typeLabels = { school: '학교', home: '집', work: '업무', study: '공부', development: '개발', research: '연구', content: '콘텐츠', personal: '개인', other: '기타' };
 const priorityLabels = { low: '낮음', medium: '보통', high: '높음' };
 const projectById = projectId => state.projects.find(project => project.id === projectId);
 const taskProject = task => projectById(task.project_id);
 
 function taskRow(task) {
 	const project = taskProject(task);
-	return `<div class="schedule-task"><input class="task-check" type="checkbox" data-dashboard-task="${task.id}" ${task.completed ? 'checked' : ''}><div class="schedule-task-copy"><strong>${escapeHtml(task.title)}</strong><span>${escapeHtml(project?.name || '')}</span></div><span class="priority ${task.priority}">${priorityLabels[task.priority]}</span></div>`;
+	return `<div class="schedule-task"><input class="task-check" type="checkbox" data-dashboard-task="${task.id}" ${task.completed ? 'checked' : ''}><span class="calendar-dot topic-${project?.project_type || 'other'}"></span><div class="schedule-task-copy"><strong>${escapeHtml(task.title)}</strong><span>${escapeHtml(project?.name || '')}</span></div><span class="priority ${task.priority}">${priorityLabels[task.priority]}</span></div>`;
 }
 
 function renderToday() {
@@ -32,7 +32,7 @@ function renderCalendar() {
 		const date = addDays(today, index);
 		const dayTasks = activeTasks.filter(task => task.planned_date === date);
 		const dateLabel = new Date(`${date}T12:00:00`).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric', weekday: 'short' });
-		return `<article class="calendar-day ${index === 0 ? 'today' : ''}"><header><strong>${dateLabel}</strong>${index === 0 ? '<span>오늘</span>' : ''}</header><div>${dayTasks.length ? dayTasks.map(task => `<a class="calendar-task" href="project.html?id=${task.project_id}"><span class="calendar-dot ${task.priority}"></span><span>${escapeHtml(task.title)}</span></a>`).join('') : '<span class="calendar-empty">-</span>'}</div></article>`;
+		return `<article class="calendar-day ${index === 0 ? 'today' : ''}"><header><strong>${dateLabel}</strong>${index === 0 ? '<span>오늘</span>' : ''}</header><div>${dayTasks.length ? dayTasks.map(task => `<a class="calendar-task" href="project.html?id=${task.project_id}"><span class="calendar-dot topic-${taskProject(task)?.project_type || 'other'}"></span><span>${escapeHtml(task.title)}</span></a>`).join('') : '<span class="calendar-empty">-</span>'}</div></article>`;
 	}).join('');
 }
 
