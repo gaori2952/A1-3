@@ -2,4 +2,4 @@
 .calendar-day{min-height:118px;background:var(--surface);border:0;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:11px}
 .calendar-day:nth-child(7n){border-right:0}
 .calendar-day:nth-child(n+8){margin-top:0;border-bottom:0}
-@media(max-width:800px){.calendar-grid{grid-template-columns:repeat(7,minmax(110px,1fr));gap:0;overflow-x:auto}.calendar-day:nth-child(n+8){margin-top:0}}
+@media(max-width:800px){.calendar-grid{grid-template-columns:repeat(7,minmax(0,1fr));gap:0;overflow:hidden}.calendar-day{min-height:92px;padding:6px 4px}.calendar-day:nth-child(n+8){margin-top:0}.calendar-day header{display:block;padding-bottom:5px;font-size:9px;white-space:nowrap}.calendar-day header span{display:block;margin-top:2px;font-size:8px}.calendar-task{display:block;overflow:hidden;padding-top:6px;font-size:9px;line-height:1.2;text-overflow:ellipsis;white-space:nowrap}.calendar-dot{width:5px;height:5px;vertical-align:middle;margin:0 2px 0 0}.calendar-empty{padding-top:7px;font-size:9px}}
