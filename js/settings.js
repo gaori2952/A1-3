@@ -8,6 +8,7 @@ let editingKey = null;
 const list = document.querySelector('#type-list');
 const modal = document.querySelector('#type-modal');
 const form = document.querySelector('#type-form');
+document.querySelectorAll('.modal-close').forEach(button => { button.type = 'button'; button.addEventListener('click', () => button.closest('dialog').close()); });
 
 function render() { list.innerHTML = types.map(type => `<div class="type-row"><span class="topic-dot" style="background:${type.color}"></span><strong>${type.label}</strong><code>${type.key}</code><span class="type-color">${type.color}</span><button class="button button-small button-ghost" data-edit="${type.key}">수정</button><button class="item-delete" data-delete="${type.key}" aria-label="유형 삭제">×</button></div>`).join(''); document.querySelectorAll('[data-edit]').forEach(button => button.addEventListener('click', () => openEditor(button.dataset.edit))); document.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', () => { types = types.filter(type => type.key !== button.dataset.delete); save(); render(); })); }
 function save() { saveSettings(session.id, { project_types: types }); }
