@@ -1,4 +1,5 @@
 import json
+import tomllib
 import unittest
 from html.parser import HTMLParser
 from pathlib import Path
@@ -39,11 +40,17 @@ class SettingsCanvasTests(unittest.TestCase):
 
     def test_vercel_uses_file_based_api_routing(self):
         config = json.loads((ROOT / "vercel.json").read_text(encoding="utf-8"))
-        pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        with (ROOT / "pyproject.toml").open("rb") as file:
+            pyproject = tomllib.load(file)
 
         self.assertNotIn("functions", config)
         self.assertNotIn("rewrites", config)
-        self.assertIn('entrypoint = "api.index:handler"', pyproject)
+        self.assertEqual(pyproject["project"]["name"], "projectflow")
+        self.assertIn("requests>=2.32.0,<3", pyproject["project"]["dependencies"])
+        self.assertEqual(
+            pyproject["tool"]["vercel"]["entrypoint"],
+            "api.index:handler",
+        )
 
 
 if __name__ == "__main__":
