@@ -1,4 +1,4 @@
-import { getState, saveState, requireSession, projectProgress, id, todayKey, addDays, getSettings, wireLogout, escapeHtml } from './supabaseClient.js?v=3';
+import { getState, saveState, requireSession, projectProgress, id, todayKey, addDays, getSettings, getProjectTypes, wireLogout, escapeHtml } from './supabaseClient.js?v=3';
 
 const session = requireSession();
 if (!session) throw new Error('No session');
@@ -6,9 +6,13 @@ wireLogout();
 const state = getState();
 const today = todayKey();
 const typeLabels = { school: '학교', home: '집', work: '업무', study: '공부', development: '개발', research: '연구', content: '콘텐츠', personal: '개인', other: '기타' };
+const projectTypes = getProjectTypes(session.id);
 const priorityLabels = { low: '낮음', medium: '보통', high: '높음' };
 const projectById = projectId => state.projects.find(project => project.id === projectId);
 const taskProject = task => projectById(task.project_id);
+const topicLabel = key => projectTypes.find(type => type.key === key)?.label || typeLabels[key] || '기타';
+const typeSelect = document.querySelector('select[name="project_type"]');
+if (typeSelect) typeSelect.innerHTML = projectTypes.map(type => `<option value="${type.key}">${escapeHtml(type.label)}</option>`).join('');
 
 function taskRow(task) {
 	const project = taskProject(task);
