@@ -1,0 +1,11 @@
+[project]
+name = "projectflow"
+version = "0.1.0"
+description = "ProjectFlow serverless API"
+requires-python = ">=3.9"
+dependencies = [
+  "requests>=2.32.0,<3",
+]
+
+[tool.vercel]
+entrypoint = "api.index:handler"
