@@ -1,4 +1,5 @@
 name: Deploy ProjectFlow to GitHub Pages
+# Static ProjectFlow site deployment.
 
 on:
   push:
