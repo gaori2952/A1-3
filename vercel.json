@@ -1,8 +1,8 @@
 {
-  "functions": {
-    "api/analyze.py": {
-      "runtime": "vercel-python@latest"
-    }
-  },
-  "rewrites": [{ "source": "/api/analyze", "destination": "/api/analyze.py" }]
+  "rewrites": [
+    { "source": "/api/analyze", "destination": "/api/analyze.py" },
+    { "source": "/api/starter_plan", "destination": "/api/starter_plan.py" },
+    { "source": "/api/schedule", "destination": "/api/schedule.py" },
+    { "source": "/api/canvas_sync", "destination": "/api/canvas_sync.py" }
+  ]
 }
