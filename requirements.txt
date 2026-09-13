@@ -1,1 +1,2 @@
-# Vercel's Python runtime provides the standard library used by api/analyze.py.
+# Vercel's Python runtime provides the standard library used by the other API functions.
+requests>=2.32.0,<3
