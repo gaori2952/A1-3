@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ProjectFlow | 대시보드</title>
+  <link rel="stylesheet" href="css/style.css?v=2">
+</head>
+<body data-page="dashboard">
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="brand-mark">PF</span><span>ProjectFlow</span></a>
+    <nav class="top-actions"><a class="text-link" href="archive.html">보관함</a><button class="button button-ghost" data-logout>로그아웃</button></nav>
+  </header>
+  <main class="shell">
+    <section class="page-heading reveal"><div><p class="eyebrow">나의 워크스페이스</p><h1>진척을 한눈에 확인하세요.</h1><p class="lede">명확한 다음 한 걸음으로 모든 개인 프로젝트를 꾸준히 움직여보세요.</p></div><button class="button button-primary" data-open-project>＋ 새 프로젝트</button></section>
+    <section class="stats-row reveal delay-1"><div><span class="stat-label">진행 중인 프로젝트</span><strong id="active-count">0</strong></div><div><span class="stat-label">남은 작업</span><strong id="task-count">0</strong></div><div><span class="stat-label">열린 이슈</span><strong id="issue-count">0</strong></div></section>
+    <section class="section-heading reveal delay-2"><div><p class="eyebrow">지금 진행 중</p><h2>진행 중인 프로젝트</h2></div><span id="project-count" class="muted"></span></section>
+    <section id="project-grid" class="project-grid reveal delay-2"></section>
+    <section id="empty-state" class="empty-state hidden"><span class="empty-mark">+</span><h2>아직 프로젝트가 없습니다.</h2><p>첫 번째 아이디어를 프로젝트로 만들어보세요.</p><button class="button button-primary" data-open-project>＋ 새 프로젝트</button></section>
+  </main>
+  <dialog id="project-modal" class="modal"><form method="dialog" id="project-form"><button class="modal-close" value="cancel" aria-label="닫기">×</button><p class="eyebrow">새 프로젝트</p><h2>무엇을 만들고 있나요?</h2><label>프로젝트 이름<input name="name" required maxlength="80" placeholder="예: AI 뉴스 파이프라인"></label><label>목표<textarea name="goal" required rows="4" placeholder="완료된 상태는 어떤 모습인가요?"></textarea></label><div class="form-actions"><button class="button button-ghost" value="cancel">취소</button><button class="button button-primary" value="default">프로젝트 만들기</button></div></form></dialog>
+  <script type="module" src="js/dashboard.js?v=2"></script>
+</body>
+</html>

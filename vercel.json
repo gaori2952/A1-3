@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/analyze.py": {
+      "runtime": "vercel-python@latest"
+    }
+  },
+  "rewrites": [{ "source": "/api/analyze", "destination": "/api/analyze.py" }]
+}
