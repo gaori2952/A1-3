@@ -22,17 +22,19 @@ class ApiEntrypointTests(unittest.TestCase):
             getattr(handler, f"do_{method}")(target)
         return result
 
-    def test_analyze_route_uses_the_shared_entrypoint(self):
+    @patch("api.index.analyze_project", return_value={"summary": "검증 결과", "status": "GOOD", "next_steps": [], "risks": []})
+    def test_analyze_route_uses_the_shared_entrypoint(self, analyze):
         result = self.request("POST", "/api/analyze", {"project_name": "Demo"})
 
         self.assertEqual(result["status"], 200)
         self.assertTrue(result["body"]["success"])
 
-    def test_starter_plan_route_uses_the_shared_entrypoint(self):
+    @patch("api.index.create_starter_plan", return_value=[{"title": "목표별 작업", "priority": "high", "reason": "다음 단계"}])
+    def test_starter_plan_route_uses_the_shared_entrypoint(self, create):
         result = self.request("POST", "/api/starter_plan", {"project_name": "Demo", "goal": "Ship"})
 
         self.assertEqual(result["status"], 200)
-        self.assertEqual(len(result["body"]["tasks"]), 6)
+        self.assertEqual(len(result["body"]["tasks"]), 1)
 
     def test_schedule_route_uses_the_shared_entrypoint(self):
         result = self.request("POST", "/api/schedule", {"tasks": [{"id": "task-1"}]})
@@ -59,3 +61,4 @@ class ApiEntrypointTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

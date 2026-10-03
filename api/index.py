@@ -7,63 +7,26 @@ from pathlib import Path
 import mimetypes
 
 from api.canvas_sync import CanvasSyncError, fetch_assignments
+from api.ai_analysis import AnalysisError, analyze_project
 
-
-def analyze_project(payload):
-    remaining = payload.get("remaining_tasks", [])
-    issues = payload.get("issues", [])
-    next_steps = [
-        {
-            "priority": task.get("priority", "medium").upper(),
-            "title": task.get("title", "Next task"),
-            "reason": "남은 작업 중 우선순위가 높은 항목입니다.",
-        }
-        for task in remaining[:3]
-    ]
-    risks = [
-        {
-            "severity": issue.get("severity", "medium").upper(),
-            "title": issue.get("content", "Open issue"),
-            "description": "아직 해결되지 않은 프로젝트 이슈입니다.",
-            "action": "원인을 확인하고 해결 상태로 업데이트하세요.",
-        }
-        for issue in issues
-    ]
-    return {
-        "summary": f"{payload['project_name']}의 현재 상태를 검토했습니다. 질문: {payload.get('question', '다음 작업은 무엇인가요?')}",
-        "status": "WATCH" if risks else "IN MOTION",
-        "next_steps": next_steps,
-        "risks": risks,
-    }
 
 
 def create_starter_plan(payload):
-    if payload.get("project_type") == "study":
-        titles = [
-            "시험 범위 확인",
-            "주차별 핵심 개념 정리",
-            "핵심 공식 정리",
-            "연습문제 1차 풀이",
-            "오답노트 정리",
-            "최종 복습 계획 만들기",
-        ]
-    else:
-        titles = [
-            "핵심 목표와 완료 기준 정리",
-            "기본 구조 설계",
-            "첫 결과물 만들기",
-            "핵심 기능 구현",
-            "검토와 오류 수정",
-            "배포 전 점검",
-        ]
-    return [
-        {
-            "title": title,
-            "priority": "high" if index < 2 else "medium" if index < 5 else "low",
-            "reason": "프로젝트 목표를 실행 가능한 단계로 나누기 위한 작업입니다.",
-        }
-        for index, title in enumerate(titles)
-    ]
+    if not isinstance(payload, dict):
+        raise AnalysisError(400, "INVALID_INPUT", "프로젝트 정보를 입력해주세요.")
+    goal = payload.get("goal", "")
+    if not isinstance(goal, str) or not goal.strip():
+        raise AnalysisError(400, "INVALID_INPUT", "프로젝트 목표를 입력해주세요.")
+    analysis = analyze_project({
+        "project_name": payload.get("project_name"),
+        "goal": goal,
+        "due_date": payload.get("due_date") or "",
+        "question": "프로젝트 유형: " + str(payload.get("project_type", "personal"))[:80]
+            + ". 추가 설명: " + str(payload.get("description", ""))[:600]
+            + ". 이 목표를 시작하는 데 필요한 구체적인 작업 3개를 제안해주세요. 일반적인 템플릿을 반복하지 말고 입력한 목표에 맞춰 작성해주세요.",
+        "remaining_tasks": [], "completed_tasks": [], "issues": [],
+    })
+    return [{"title": task["title"], "priority": task["priority"].lower(), "reason": task["reason"]} for task in analysis["next_steps"]]
 
 
 def create_schedule(payload):
@@ -122,16 +85,18 @@ class handler(BaseHTTPRequestHandler):
                 if not payload.get("project_name"):
                     self._send(400, {"success": False, "message": "분석할 프로젝트 정보를 조금 더 입력해주세요."})
                     return
-                self._send(200, {"success": True, "analysis": analyze_project(payload)})
+                self._send(200, {"success": True, "provider": "openai-compatible", "analysis": analyze_project(payload)})
             elif path == "/api/starter_plan":
                 if not payload.get("project_name") or not payload.get("goal"):
                     self._send(400, {"success": False, "message": "프로젝트 이름과 목표를 입력해주세요."})
                     return
-                self._send(200, {"success": True, "tasks": create_starter_plan(payload)})
+                self._send(200, {"success": True, "provider": "openai-compatible", "tasks": create_starter_plan(payload)})
             elif path == "/api/schedule":
                 self._send(200, {"success": True, "schedule": create_schedule(payload)})
             else:
                 self._send(404, {"success": False, "message": "API 경로를 찾을 수 없습니다."})
+        except AnalysisError as error:
+            self._send(error.status, {"success": False, "code": error.code, "message": error.message})
         except (json.JSONDecodeError, UnicodeDecodeError):
             self._send(400, {"success": False, "message": "올바른 JSON 요청이 필요합니다."})
         except Exception:
@@ -175,6 +140,8 @@ class handler(BaseHTTPRequestHandler):
 
     def _read_json(self):
         size = int(self.headers.get("content-length", 0))
+        if size < 0 or size > 65536:
+            raise AnalysisError(413, "REQUEST_TOO_LARGE", "입력 데이터가 너무 큽니다. 작업과 질문을 줄여주세요.")
         return json.loads(self.rfile.read(size) or b"{}")
 
     def _send(self, status, body):
@@ -185,3 +152,4 @@ class handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
         self.wfile.write(encoded)
+
