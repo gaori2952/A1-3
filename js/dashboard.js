@@ -16,7 +16,7 @@ if (typeSelect) typeSelect.innerHTML = projectTypes.map(type => `<option value="
 
 function taskRow(task) {
 	const project = taskProject(task);
-	return `<div class="schedule-task"><input class="task-check" type="checkbox" data-dashboard-task="${task.id}" ${task.completed ? 'checked' : ''}><span class="calendar-dot topic-${project?.project_type || 'other'}"></span><div class="schedule-task-copy"><strong>${escapeHtml(task.title)}</strong><span>${escapeHtml(project?.name || '')}</span></div><span class="priority ${task.priority}">${priorityLabels[task.priority]}</span></div>`;
+	return `<div class="schedule-task"><input class="task-check" type="checkbox" data-dashboard-task="${task.id}" ${task.completed ? 'checked' : ''}><span class="calendar-dot topic-${project?.project_type || 'other'}"></span><div class="schedule-task-copy"><strong>${escapeHtml(task.planned_date)} · ${task.duration_minutes}분</strong><span>${escapeHtml(task.title)}</span><span>${escapeHtml(project?.name || '')}</span></div><span class="priority ${task.priority}">${priorityLabels[task.priority]}</span></div>`;
 }
 
 function renderToday() {
@@ -68,18 +68,18 @@ async function createProject(data, useAi) {
   if (button.disabled) return;
   button.disabled = true;
   document.querySelector('#empty-project').disabled = true;
-  button.textContent = '시작 플랜 만드는 중...';
-  status.textContent = '입력한 목표에 맞는 첫 작업을 준비하고 있습니다.';
+  button.textContent = '일정 만드는 중...';
+  status.textContent = '목표와 마감일에 맞는 실행 일정을 준비하고 있습니다.';
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 55000);
   try {
-    const response = await fetch('/api/starter_plan', { method: 'POST', signal: controller.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_name: project.name, project_type: project.project_type, goal: project.goal, due_date: project.due_date, description: project.description }) });
+    const response = await fetch('/api/starter_plan', { method: 'POST', signal: controller.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_name: project.name, project_type: project.project_type, goal: project.goal, due_date: project.due_date, start_date: today, description: project.description }) });
     const payload = await response.json().catch(() => null);
     if (!response.ok || !payload?.success) throw new Error(payload?.message || '시작 플랜을 만들지 못했습니다. 다시 시도해주세요.');
     const suggestions = payload.tasks;
-    if (payload.provider !== 'openai-compatible' || !Array.isArray(suggestions) || !suggestions.length || suggestions.some(task => typeof task.title !== 'string' || typeof task.reason !== 'string' || !['high','medium','low'].includes(task.priority))) throw new Error('AI 응답 형식이 올바르지 않습니다. 다시 시도해주세요.');
-    document.querySelector('#plan-title').textContent = `${project.name} 시작 플랜`;
-    document.querySelector('#starter-list').innerHTML = suggestions.map((task, index) => `<label class="starter-item"><input type="checkbox" name="starter-task" value="${index}" checked><span class="starter-copy"><strong>${escapeHtml(task.title)}</strong><span class="priority ${task.priority}">우선순위 ${priorityLabels[task.priority]}</span><small>${escapeHtml(task.reason)}</small></span></label>`).join('');
+    if (payload.provider !== 'openai-compatible' || !Array.isArray(suggestions) || !suggestions.length || suggestions.some(task => typeof task.title !== 'string' || typeof task.reason !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(task.planned_date) || !Number.isInteger(task.duration_minutes) || !['high','medium','low'].includes(task.priority))) throw new Error('AI 응답 형식이 올바르지 않습니다. 다시 시도해주세요.');
+    document.querySelector('#plan-title').textContent = `${project.name} 추천 일정`;
+    document.querySelector('#starter-list').innerHTML = suggestions.map((task, index) => `<label class="starter-item"><input type="checkbox" name="starter-task" value="${index}" checked><span class="starter-copy"><strong>${escapeHtml(task.planned_date)} · ${task.duration_minutes}분</strong><span>${escapeHtml(task.title)}</span><span class="priority ${task.priority}">우선순위 ${priorityLabels[task.priority]}</span><small>${escapeHtml(task.reason)}</small></span></label>`).join('');
     projectModal.close();
     document.querySelector('#plan-modal').showModal();
     document.querySelector('#plan-form').onsubmit = event => {
@@ -87,7 +87,7 @@ async function createProject(data, useAi) {
       if (event.submitter?.value === 'cancel') { document.querySelector('#plan-modal').close(); return; }
       const selected = [...document.querySelectorAll('input[name="starter-task"]:checked')].map(input => suggestions[Number(input.value)]);
       state.projects.push(project);
-      selected.forEach(task => state.tasks.push({ id: id(), project_id: project.id, user_id: session.id, title: task.title, priority: task.priority, completed: false, planned_date: null, due_date: project.due_date, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }));
+      selected.forEach(task => state.tasks.push({ id: id(), project_id: project.id, user_id: session.id, title: task.title, priority: task.priority, completed: false, planned_date: task.planned_date, duration_minutes: task.duration_minutes, due_date: project.due_date, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }));
       saveState(state);
       location.href = `project.html?id=${project.id}`;
     };
@@ -97,7 +97,7 @@ async function createProject(data, useAi) {
     clearTimeout(timer);
     button.disabled = false;
     document.querySelector('#empty-project').disabled = false;
-    button.textContent = 'AI로 시작하기';
+    button.textContent = 'AI 일정 추천';
   }
 }
 

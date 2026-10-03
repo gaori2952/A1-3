@@ -60,12 +60,23 @@ class AiAnalysisTests(unittest.TestCase):
             self.assertEqual(caught.exception.code, 'AI_INVALID_RESPONSE')
 
     @patch("api.index.analyze_project")
-    def test_starter_uses_goal_specific_ai(self, analyze):
-        analyze.return_value = self.result
-        tasks = create_starter_plan({"project_name": "과제", "goal": "서비스 배포", "project_type": "school"})
-        self.assertEqual(tasks[0]['title'], '가상 키 설정')
-        self.assertEqual(analyze.call_args.args[0]['goal'], '서비스 배포')
-        self.assertIn('school', analyze.call_args.args[0]['question'])
+    def test_starter_assigns_dates_and_durations(self, analyze):
+        tasks = [{"title": "목표 실행", "priority": "HIGH", "reason": "초반 집중", "planned_date": "2026-10-03", "duration_minutes": 45}]
+        analyze.return_value = {"tasks": tasks}
+        result = create_starter_plan({"project_name": "과제", "goal": "서비스 배포", "start_date": "2026-10-03"})
+        self.assertEqual(result[0]['planned_date'], '2026-10-03')
+        self.assertEqual(result[0]['duration_minutes'], 45)
+        validator = analyze.call_args.kwargs['validator']
+        validator({"tasks": tasks})
+        for bad in [{**tasks[0], "planned_date": "2026-10-02"}, {**tasks[0], "planned_date": "2026-10-10"}, {**tasks[0], "duration_minutes": 0}]:
+            with self.assertRaises(ValueError):
+                validator({"tasks": [bad]})
+
+    @patch("api.index.analyze_project")
+    def test_starter_rejects_past_deadline_before_calling_ai(self, analyze):
+        with self.assertRaises(AnalysisError):
+            create_starter_plan({"project_name": "과제", "goal": "배포", "start_date": "2026-10-03", "due_date": "2026-10-02"})
+        analyze.assert_not_called()
 
 
 if __name__ == '__main__':
