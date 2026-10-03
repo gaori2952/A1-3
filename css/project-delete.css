@@ -5,7 +5,8 @@
 .project-delete-modal .form-actions{flex-wrap:wrap}
 .project-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;border-bottom:1px solid var(--border);background:var(--surface)}
 .project-entry:last-child{border-bottom:0}
-.project-entry .project-card{border-bottom:0}
+.project-entry .project-card{border-bottom:0;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 80px;gap:20px}
+@media(max-width:800px){.project-entry .project-card{grid-template-columns:minmax(0,1fr)}}
 .project-entry>button{margin:0 16px 0 0}
 .archive-project-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;border-bottom:1px solid var(--border)}
 .archive-project-entry:last-child{border-bottom:0}
