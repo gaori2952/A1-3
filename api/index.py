@@ -87,7 +87,7 @@ class handler(BaseHTTPRequestHandler):
             self._send(404, {"success": False, "message": "API 경로를 찾을 수 없습니다."})
             return
 
-        self._send(405, {"success": False, "message": "설정 화면에서 개인 연동 코드로 조회해주세요."})
+        self._send(405, {"success": False, "message": "설정 화면에서 Canvas API 토큰으로 조회해주세요."})
 
     def do_POST(self):
         try:

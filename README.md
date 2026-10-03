@@ -133,4 +133,4 @@ A1-3/
 
 [요구사항별 구현 근거](docs/requirements-checklist.md)
 
-Canvas는 선택 기능입니다. 서버 환경 변수의 개인 API 토큰과 개인 연동 코드가 설정된 경우에만 조회하며, 학교 과제를 AI 제공자에 자동 전송하지 않습니다. [Canvas 설정](docs/setup-and-deployment.md#canvas-선택-기능)
+Canvas는 선택 기능입니다. 설정 화면에 개인 API 토큰을 입력해 조회하며, 학교 과제를 AI 제공자에 자동 전송하지 않습니다. [Canvas 설정](docs/setup-and-deployment.md#canvas-선택-기능)

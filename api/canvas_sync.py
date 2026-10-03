@@ -1,6 +1,4 @@
 import json
-import os
-import hmac
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import quote, urlsplit
 import time
@@ -137,17 +135,12 @@ def fetch_assignments(base_url, token, year=None, semester=None):
 
 
 def canvas_result(payload):
-    expected_code = os.environ.get("CANVAS_ACCESS_CODE", "").strip()
-    token = os.environ.get("CANVAS_TOKEN", "").strip()
-    if not expected_code or not token:
-        raise CanvasSyncError(503, "canvas_not_configured", "Canvas 개인 연동을 준비하고 있습니다. 서버 환경 변수 설정을 확인해주세요.")
-    provided_code = payload.get("access_code") if isinstance(payload, dict) else None
-    if not isinstance(provided_code, str) or not provided_code or len(provided_code) > 512:
-        raise CanvasSyncError(401, "canvas_access_denied", "Canvas 개인 연동 코드를 입력해주세요.")
-    if not hmac.compare_digest(provided_code.encode("utf-8"), expected_code.encode("utf-8")):
-        raise CanvasSyncError(401, "canvas_access_denied", "Canvas 개인 연동 코드가 올바르지 않습니다.")
+    token = payload.get("token") if isinstance(payload, dict) else None
+    if not isinstance(token, str) or not token.strip():
+        raise CanvasSyncError(400, "canvas_token_required", "Canvas API 토큰을 입력해주세요.")
+    token = token.strip()
     if len(token) > 4096 or any(character.isspace() for character in token):
-        raise CanvasSyncError(503, "canvas_token_invalid", "서버의 Canvas 토큰 설정을 확인해주세요.")
+        raise CanvasSyncError(400, "canvas_token_invalid", "Canvas API 토큰 형식을 확인해주세요.")
     default_year, default_semester = semester_defaults()
     year, semester = payload.get("year", default_year), payload.get("semester", default_semester)
     if type(year) is not int or not 2000 <= year <= 2100 or type(semester) is not int or semester not in (1, 2):
@@ -159,7 +152,7 @@ def canvas_result(payload):
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        self._send(405, {"success": False, "message": "설정 화면에서 개인 연동 코드로 조회해주세요."})
+        self._send(405, {"success": False, "message": "설정 화면에서 Canvas API 토큰으로 조회해주세요."})
 
     def do_POST(self):
         try:

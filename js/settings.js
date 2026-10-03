@@ -127,10 +127,10 @@ function renderCanvasPreview(assignments) {
 }
 
 canvasButton.addEventListener('click', async () => {
-  const accessInput = document.querySelector('#canvas-access-code');
-  let accessCode = accessInput.value.trim();
-  if (!accessCode) { setCanvasStatus('Canvas 개인 연동 코드를 입력해주세요.', 'error'); return; }
-  accessInput.value = '';
+  const tokenInput = document.querySelector('#canvas-token');
+  let canvasToken = tokenInput.value.trim();
+  if (!canvasToken) { setCanvasStatus('Canvas API 토큰을 입력해주세요.', 'error'); return; }
+  tokenInput.value = '';
   canvasButton.disabled = true;
   canvasPreview.classList.add('hidden');
   setCanvasStatus('Canvas 일정을 불러오고 있습니다...', 'loading');
@@ -140,7 +140,7 @@ canvasButton.addEventListener('click', async () => {
     const response = await fetch('/api/canvas_sync', {
       method: 'POST',
       headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ access_code: accessCode, year: Number(document.querySelector("#canvas-year").value), semester: Number(document.querySelector("#canvas-semester").value) }),
+      body: JSON.stringify({ token: canvasToken, year: Number(document.querySelector("#canvas-year").value), semester: Number(document.querySelector("#canvas-semester").value) }),
       signal: controller.signal,
       cache: 'no-store',
     });
@@ -155,7 +155,7 @@ canvasButton.addEventListener('click', async () => {
     renderCanvasPreview([]);
     setCanvasStatus(error.name === 'AbortError' ? 'Canvas 응답 시간이 초과됐습니다. 다시 시도해주세요.' : (error.message || 'Canvas 연결을 확인해주세요.'), 'error');
   } finally {
-    accessCode = "";
+    canvasToken = "";
     clearTimeout(timer);
     canvasButton.disabled = false;
   }
