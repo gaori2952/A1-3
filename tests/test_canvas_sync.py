@@ -25,18 +25,18 @@ class CanvasSyncTests(unittest.TestCase):
         result = {}
         fake_handler = Mock()
         fake_handler._send.side_effect = lambda status, body: result.update(status=status, body=body)
-        body = json.dumps({"token": environment.get("CANVAS_TOKEN", ""), "year": 2026, "semester": 2}).encode()
+        body = json.dumps({"access_code": "test-access", "year": 2026, "semester": 2}).encode()
         fake_handler.headers = {"content-length": str(len(body))}
         fake_handler.rfile = io.BytesIO(body)
-        with patch.dict(os.environ, environment, clear=True):
+        with patch.dict(os.environ, {**environment, "CANVAS_ACCESS_CODE": "test-access"}, clear=True):
             handler.do_POST(fake_handler)
         return result
 
     def test_missing_token_is_reported_without_exposing_a_secret(self):
         result = self.invoke_handler({"CANVAS_BASE_URL": "https://canvas.example.edu"})
 
-        self.assertEqual(result["status"], 400)
-        self.assertEqual(result["body"]["code"], "canvas_token_missing")
+        self.assertEqual(result["status"], 503)
+        self.assertEqual(result["body"]["code"], "canvas_not_configured")
         self.assertNotIn("Bearer", json.dumps(result["body"]))
 
     @patch("api.canvas_sync.requests.get")
@@ -142,7 +142,7 @@ class CanvasSyncTests(unittest.TestCase):
         self.assertEqual(get.call_count, 3)
 
     @patch("api.canvas_sync.fetch_assignments")
-    def test_server_saved_token_never_used_without_request_token(self, fetch):
+    def test_server_saved_token_never_used_without_access_code(self, fetch):
         with patch.dict(os.environ, {"CANVAS_TOKEN": "server-secret"}):
             with self.assertRaises(CanvasSyncError):
                 canvas_result({})
@@ -165,6 +165,21 @@ class CanvasSyncTests(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(get.call_count, 2)
         self.assertIn('/courses/99/assignments', get.call_args.args[0])
+
+    @patch("api.canvas_sync.fetch_assignments", return_value=[])
+    def test_valid_access_uses_only_server_token(self, fetch):
+        with patch.dict(os.environ, {"CANVAS_TOKEN": "server-secret", "CANVAS_ACCESS_CODE": "private-code"}, clear=True):
+            canvas_result({"access_code": "private-code", "token": "injected", "year": 2026, "semester": 2})
+        fetch.assert_called_once_with('https://canvas.skku.edu', 'server-secret', 2026, 2)
+
+    @patch("api.canvas_sync.fetch_assignments")
+    def test_wrong_access_cannot_fetch_personal_assignments(self, fetch):
+        with patch.dict(os.environ, {"CANVAS_TOKEN": "server-secret", "CANVAS_ACCESS_CODE": "private-code"}, clear=True):
+            with self.assertRaises(CanvasSyncError) as caught:
+                canvas_result({"access_code": "wrong"})
+            self.assertEqual(caught.exception.status, 401)
+            self.assertNotIn('server-secret', caught.exception.message)
+        fetch.assert_not_called()
 
 
 if __name__ == "__main__":
