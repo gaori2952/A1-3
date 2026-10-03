@@ -136,3 +136,15 @@ body[data-page="archive"] .archive-item h3{font-size:15px;font-weight:400}
 .scheduled-add{display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:16px 0;border-bottom:1px solid var(--border)}
 .scheduled-add input{width:100%;min-width:0}.schedule-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.scheduled-add>.button{align-self:flex-end}.scheduled-add .form-error:empty{display:none}
 @media(max-width:600px){.schedule-fields{grid-template-columns:1fr 1fr}}
+
+.planner-tools{display:flex;gap:12px;align-items:center;margin-bottom:20px}.planner-tools input{max-width:320px;margin:0}.planner-tools select{width:auto;min-width:160px;margin:0}
+.planner-workspace{align-items:stretch;grid-template-columns:minmax(250px,.85fr) minmax(0,1.45fr);gap:24px}
+.today-pane,.week-pane{background:#fff;border:1px solid #e0e4eb;border-radius:8px;padding:24px;min-width:0}
+.today-pane>.section-heading,.week-pane>.section-heading{min-height:40px;align-items:center;margin:0 0 20px}
+.week-pane>.section-heading{flex-wrap:wrap;gap:8px}.week-controls{flex-wrap:wrap;gap:4px}.week-controls input{width:116px;font-size:11px;padding:4px;min-height:29px;margin:0}
+.week-scroll{border-radius:4px;background:#fff}.week-footer{justify-content:flex-end}
+.project-board{display:block;background:#fff;border:1px solid #e0e4eb;border-radius:8px;padding:0 20px}
+.project-list-row{display:flex;gap:18px;align-items:center;padding:18px 0;border-bottom:1px solid var(--border)}.project-list-row:last-child{border-bottom:0}.project-list-row>a{display:flex;flex:1;min-width:0;align-items:center;gap:14px}.project-list-row>a>div{flex:1;min-width:0}.project-list-row h3{font-weight:400;font-size:16px;margin:0;overflow-wrap:anywhere}.project-list-row small{font-size:11px;color:var(--text-muted)}.project-list-row .project-color{flex-shrink:0;margin:0}.project-task-count,.project-percent{font-size:12px;color:var(--text-muted);white-space:nowrap}
+.week-agenda section{border-top:1px solid var(--border);padding:12px 0}.week-agenda h3{font-size:13px;font-weight:500;margin:0 0 8px}.week-agenda .planner-task{padding:12px 0}.agenda-empty{font-size:12px;color:var(--text-muted);margin:0}
+@media(max-width:1100px){.planner-workspace{grid-template-columns:1fr}.week-controls input{width:120px}}
+@media(max-width:600px){.today-pane,.week-pane{padding:18px}.planner-tools{gap:8px}.planner-tools input{width:55%;min-width:0}.planner-tools select{width:45%;min-width:0}.project-task-count{display:none}.project-list-row{gap:10px}.project-board{padding:0 14px}}
