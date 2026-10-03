@@ -1,7 +1,4 @@
 /* Archive page layout */
-body[data-page="archive"] .topbar{margin-left:0;justify-content:space-between}
-body[data-page="archive"] .topbar .brand{display:flex;align-items:center;gap:10px;font-weight:700}
-body[data-page="archive"] .shell{width:100%;max-width:1160px;margin:0 auto}
 body[data-page="archive"] .page-heading{margin-bottom:32px}
 .archive-list{display:grid;gap:24px;background:transparent;border:0}
 .archive-group{min-width:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
