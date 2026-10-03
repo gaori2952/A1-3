@@ -1,6 +1,6 @@
-:root{--background:#eef0f5;--surface:#f7f8fb;--primary:#617ca4;--primary-soft:#e5ebf3;--text:#343b42;--text-muted:#7d8794;--border:#dfe3e9;--radius:8px;font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic","Segoe UI",Arial,sans-serif}
+:root{--sidebar:184px;--background:#eef0f5;--surface:#f7f8fb;--primary:#617ca4;--primary-soft:#e5ebf3;--text:#343b42;--text-muted:#7d8794;--border:#dfe3e9;--radius:8px;font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic","Segoe UI",Arial,sans-serif}
 body{font-weight:400;line-height:1.6;font-size:14px;letter-spacing:-.3px}
-.workspace-sidebar{background:#f5f6fa;padding:30px 20px;border-right:1px solid #e2e5eb}
+.workspace-sidebar{background:#f5f6fa;padding:30px 16px;border-right:1px solid #e2e5eb}
 .sidebar-brand{font-size:21px;font-weight:500;letter-spacing:-.8px;padding:0 12px;margin-bottom:44px}
 .brand-mark{border-radius:7px;background:#7186a5;font-weight:500}
 .sidebar-label{font-size:10px;font-weight:400;color:#9aa3af;margin-top:52px}
@@ -125,3 +125,5 @@ body[data-page="archive"] .archive-item h3{font-size:15px;font-weight:400}
 @media(max-width:800px){.workspace-sidebar{padding:18px;background:#f5f6fa}.workspace-sidebar nav{overflow-x:auto;gap:2px}.sidebar-link{padding:10px 8px;font-size:12px}.sidebar-link:hover,.sidebar-link.selected{border:0}.sidebar-brand{font-size:18px;margin-bottom:18px;padding:0}.sidebar-link.selected::after{left:8px;bottom:3px}.topbar{height:48px}.shell{padding:28px 18px 50px}.planner-heading{gap:16px;align-items:flex-start}.planner-heading h1{font-size:27px}.planner-heading .lede{font-size:12px}.planner-heading>.button{font-size:11px;padding:0 11px}.project-board{gap:16px}.page-heading h1{font-size:28px}}
 @media(max-width:600px){.planner-workspace{gap:26px}.today-pane{padding:20px}.project-board{grid-template-columns:1fr;gap:26px}.week-controls{gap:3px}.week-controls span{font-size:10px}.week-footer{align-items:flex-start}.time-form-row{grid-template-columns:1fr 1fr}.planner-heading{flex-wrap:wrap}.planner-heading>.button{margin-top:0}.canvas-section{padding:21px 17px}.board-project{padding:17px 0}.auth-message h1{font-size:35px}}
 @media(prefers-reduced-motion:reduce){.reveal{animation:none}}
+
+@media(max-width:800px){:root{--sidebar:0px}}
