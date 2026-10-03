@@ -50,7 +50,7 @@ export function initializeNotes(userId) {
     if (!flush()) return;
     const newId = id();
     try { saveState(writeNote(getState(), userId, newId, {})); }
-    catch { status.textContent = 'Could not create a note. Browser storage is full.'; return; }
+    catch { root.querySelector('#notes-list-status').textContent = 'Could not create a note. Browser storage is full.'; return; }
     trash = false; root.querySelector('#notes-trash-toggle').setAttribute('aria-pressed','false');
     query = ''; root.querySelector('#note-search').value = '';
     select(newId); title.focus();

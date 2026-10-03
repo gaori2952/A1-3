@@ -34,7 +34,7 @@ class SettingsCanvasTests(unittest.TestCase):
         canvas_source = source[source.index("function formatCanvasDueDate") :]
 
         self.assertIn("fetch('/api/canvas_sync'", canvas_source)
-        self.assertIn("new Intl.DateTimeFormat('ko-KR'", canvas_source)
+        self.assertIn("new Intl.DateTimeFormat('en-US'", canvas_source)
         self.assertIn("document.createElement('input')", canvas_source)
         self.assertNotIn("localStorage", canvas_source)
 

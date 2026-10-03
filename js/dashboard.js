@@ -20,6 +20,7 @@ document.querySelector('#projects-section').classList.toggle('hidden',view==='ai
 document.querySelector('#ai-view').classList.toggle('hidden',view!=='ai');
 document.querySelector('#notes-view').classList.toggle('hidden',view!=='notes');document.querySelector('.planner-header-actions').classList.toggle('hidden',view==='notes');if(view==='notes')initializeNotes(session.id);
 document.querySelector('#view-title').textContent=view==='notes'?'Notes':view==='projects'?'Projects':view==='ai'?'AI':'Today';
+document.title='ProjectFlow | '+document.querySelector('#view-title').textContent;
 document.querySelector('#planner-date').textContent=new Date(today+'T12:00:00').toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
 let weekOffset=0,selectedTaskId=null,focusedTaskId=null,searchQuery='',filterProject='',agendaMode=false;
 const filterSelect=document.querySelector('#project-filter');filterSelect.innerHTML='<option value="">All projects</option>'+state.projects.filter(p=>p.user_id===session.id&&p.status!=='archived').map(p=>'<option value="'+p.id+'">'+escapeHtml(p.name)+'</option>').join('');
@@ -119,3 +120,5 @@ quickForm.addEventListener('submit',event=>{
   try{saveState(next);}catch{error.textContent='Could not save. Please try again.';return;}
   state=next;quickModal.close();filterSelect.innerHTML='<option value="">All projects</option>'+state.projects.filter(p=>p.user_id===session.id&&p.status!=='archived').map(p=>'<option value="'+p.id+'">'+escapeHtml(p.name)+'</option>').join('');filterSelect.value=filterProject;render();showToast('Task added');
 });
+
+document.querySelectorAll('[data-planner-pane]').forEach(button=>button.addEventListener('click',()=>{const calendar=button.dataset.plannerPane==='calendar';document.querySelector('#workspace-view').classList.toggle('mobile-show-week',calendar);document.querySelectorAll('[data-planner-pane]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));}));
