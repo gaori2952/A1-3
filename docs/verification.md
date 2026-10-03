@@ -56,3 +56,13 @@ Python 30개 및 JavaScript 10개 테스트 통과. 주간 날짜 경계, 시간
 - 390px 모바일에서 페이지 폭 390px로 가로 넘침 없음.
 - 주간 날짜/겹침/보관함 관련 JavaScript 테스트 4개 통과.
 - 최신 화면: screenshots/planner-aligned-desktop.png, screenshots/planner-aligned-mobile.png.
+
+
+### 2026-10-04 영어 UI·Notes 확장
+- 기본 메뉴·폼·실패 안내를 영어로 전환. 기존 한글 프로젝트·작업명 유지 확인.
+- Notes의 한글 입력, 자동 저장 후 새로고침, 본문 검색, 프로젝트 연결, 고정, Trash 이동·복원 확인. 검증용 메모는 Trash로 이동함.
+- 390px 모바일 메모 편집 화면의 페이지 폭 390px 확인.
+- 빠른 일정 추가의 시간 입력 시 날짜 누락 검증과 Cancel 동작 확인(이 테스트는 작업을 저장하지 않음).
+- JavaScript 12개, Python 30개 검증 통과. 브라우저 저장만 제공하며 기기 간 동기화는 없음.
+
+- 모바일 Tasks/Calendar 전환 후 시간표 표시 확인. 데스크톱 좌우 패널 상단 277px로 동일하고 1280px/390px 화면에서 페이지 가로 넘침 없음. 검증 중 브라우저 console error 없음.
