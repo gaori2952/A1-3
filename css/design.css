@@ -1,12 +1,14 @@
 :root{--background:#eef0f5;--surface:#f7f8fb;--primary:#617ca4;--primary-soft:#e5ebf3;--text:#343b42;--text-muted:#7d8794;--border:#dfe3e9;--radius:8px;font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic","Segoe UI",Arial,sans-serif}
 body{font-weight:400;line-height:1.6;font-size:14px;letter-spacing:-.3px}
 .workspace-sidebar{background:#f5f6fa;padding:30px 20px;border-right:1px solid #e2e5eb}
-.sidebar-brand{font-size:20px;font-weight:500;letter-spacing:-.6px;gap:10px}
+.sidebar-brand{font-size:21px;font-weight:500;letter-spacing:-.8px;padding:0 12px;margin-bottom:44px}
 .brand-mark{border-radius:7px;background:#7186a5;font-weight:500}
 .sidebar-label{font-size:10px;font-weight:400;color:#9aa3af;margin-top:52px}
-.sidebar-link{font-size:15px;font-weight:400;padding:13px 12px;margin:5px 0;border:0;border-radius:6px;white-space:nowrap}
-.sidebar-link:hover,.sidebar-link.selected{border:0;background:#e5eaf2;color:#3a5273}
-.sidebar-link.selected{font-weight:600}
+.sidebar-link{position:relative;font-size:15px;font-weight:400;padding:13px 12px;margin:5px 0;border:0;border-radius:0;white-space:nowrap;background:transparent}
+.sidebar-link:hover{border:0;background:transparent;color:#3a5273}
+.sidebar-link.selected{border:0;background:transparent;color:#343b42;font-weight:600}
+.sidebar-link.selected::after{content:"";position:absolute;left:12px;bottom:7px;width:24px;height:2px;background:#617ca4}
+.sidebar-link:focus-visible{outline:2px solid #91a1ba;outline-offset:2px}
 .topbar{height:64px;background:#f5f6fa;border-bottom-color:#e3e6ec}
 .top-actions .text-link{font-weight:400;font-size:12px}
 .shell{max-width:1400px;padding:38px 40px 70px}
@@ -40,7 +42,7 @@ input:focus,textarea:focus,select:focus{border-color:#91a1ba}
 .task-select small{display:block;margin-top:6px;font-size:11px;color:#8b95a2;line-height:1.6}
 .task-select:focus-visible{outline:2px solid #8a9ebb;outline-offset:4px}
 .planner-task .priority{font-size:10px;margin-top:3px;font-weight:400}
-.planner-tip{font-size:11px;color:#9aa2ad;line-height:1.7;margin:24px 0 0}
+
 .planner-empty{padding:20px 0;color:#8b96a3;font-size:13px;line-height:1.8}
 .today-pane #overdue-section{margin-top:24px}
 .today-pane h3{font-size:14px;font-weight:400;color:#9b7773}
@@ -120,6 +122,6 @@ body[data-page="archive"] .archive-item h3{font-size:15px;font-weight:400}
 .auth-message .eyebrow{color:#7c8ea7}
 .auth-card h2{font-weight:400}
 @media(max-width:1100px){.shell{padding:32px 26px 60px}.planner-workspace{grid-template-columns:1fr;gap:28px}.today-pane{padding:22px}.project-columns{grid-template-columns:1fr}.project-shell .insight-callout{order:-1}.type-row{grid-template-columns:14px minmax(0,1fr) auto auto}.type-row code,.type-color{display:none}}
-@media(max-width:800px){.workspace-sidebar{padding:18px;background:#f5f6fa}.workspace-sidebar nav{overflow-x:auto;gap:2px}.sidebar-link{padding:10px 8px;font-size:12px}.sidebar-link:hover,.sidebar-link.selected{border:0}.sidebar-brand{font-size:18px}.topbar{height:48px}.shell{padding:28px 18px 50px}.planner-heading{gap:16px;align-items:flex-start}.planner-heading h1{font-size:27px}.planner-heading .lede{font-size:12px}.planner-heading>.button{font-size:11px;padding:0 11px}.project-board{gap:16px}.page-heading h1{font-size:28px}}
+@media(max-width:800px){.workspace-sidebar{padding:18px;background:#f5f6fa}.workspace-sidebar nav{overflow-x:auto;gap:2px}.sidebar-link{padding:10px 8px;font-size:12px}.sidebar-link:hover,.sidebar-link.selected{border:0}.sidebar-brand{font-size:18px;margin-bottom:18px;padding:0}.sidebar-link.selected::after{left:8px;bottom:3px}.topbar{height:48px}.shell{padding:28px 18px 50px}.planner-heading{gap:16px;align-items:flex-start}.planner-heading h1{font-size:27px}.planner-heading .lede{font-size:12px}.planner-heading>.button{font-size:11px;padding:0 11px}.project-board{gap:16px}.page-heading h1{font-size:28px}}
 @media(max-width:600px){.planner-workspace{gap:26px}.today-pane{padding:20px}.project-board{grid-template-columns:1fr;gap:26px}.week-controls{gap:3px}.week-controls span{font-size:10px}.week-footer{align-items:flex-start}.time-form-row{grid-template-columns:1fr 1fr}.planner-heading{flex-wrap:wrap}.planner-heading>.button{margin-top:0}.canvas-section{padding:21px 17px}.board-project{padding:17px 0}.auth-message h1{font-size:35px}}
 @media(prefers-reduced-motion:reduce){.reveal{animation:none}}
