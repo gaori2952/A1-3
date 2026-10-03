@@ -6,7 +6,7 @@ from urllib.parse import urlsplit, unquote
 from pathlib import Path
 import mimetypes
 
-from api.canvas_sync import CanvasSyncError, fetch_assignments
+from api.canvas_sync import CanvasSyncError, canvas_result
 from api.ai_analysis import AnalysisError, analyze_project, object_schema, STRING, PRIORITY
 
 
@@ -87,29 +87,15 @@ class handler(BaseHTTPRequestHandler):
             self._send(404, {"success": False, "message": "API 경로를 찾을 수 없습니다."})
             return
 
-        base_url = os.environ.get("CANVAS_BASE_URL", "").strip()
-        token = os.environ.get("CANVAS_TOKEN", "").strip()
-        if not token:
-            self._send(500, {"success": False, "code": "canvas_token_missing", "message": "서버에 Canvas 토큰이 설정되지 않았습니다."})
-            return
-        if not base_url:
-            self._send(500, {"success": False, "code": "canvas_base_url_missing", "message": "서버에 Canvas 주소가 설정되지 않았습니다."})
-            return
-
-        try:
-            assignments = fetch_assignments(base_url, token)
-            message = f"Canvas에서 {len(assignments)}개의 과제를 찾았습니다." if assignments else "현재 수강 과목에서 조회된 과제가 없습니다."
-            self._send(200, {"success": True, "assignments": assignments, "message": message})
-        except CanvasSyncError as error:
-            self._send(error.status, {"success": False, "code": error.code, "message": error.message})
-        except Exception:
-            self._send(500, {"success": False, "code": "canvas_sync_error", "message": "Canvas 일정을 처리하는 중 오류가 발생했습니다."})
+        self._send(405, {"success": False, "message": "설정 화면에서 본인 토큰으로 조회해주세요."})
 
     def do_POST(self):
         try:
             payload = self._read_json()
             path = self._path()
-            if path == "/api/analyze":
+            if path == "/api/canvas_sync":
+                self._send(200, canvas_result(payload))
+            elif path == "/api/analyze":
                 if not payload.get("project_name"):
                     self._send(400, {"success": False, "message": "분석할 프로젝트 정보를 조금 더 입력해주세요."})
                     return
@@ -123,7 +109,7 @@ class handler(BaseHTTPRequestHandler):
                 self._send(200, {"success": True, "schedule": create_schedule(payload)})
             else:
                 self._send(404, {"success": False, "message": "API 경로를 찾을 수 없습니다."})
-        except AnalysisError as error:
+        except (AnalysisError, CanvasSyncError) as error:
             self._send(error.status, {"success": False, "code": error.code, "message": error.message})
         except (json.JSONDecodeError, UnicodeDecodeError):
             self._send(400, {"success": False, "message": "올바른 JSON 요청이 필요합니다."})

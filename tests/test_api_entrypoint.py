@@ -42,16 +42,15 @@ class ApiEntrypointTests(unittest.TestCase):
         self.assertEqual(result["status"], 200)
         self.assertEqual(result["body"]["schedule"][0]["task_id"], "task-1")
 
-    @patch("api.index.fetch_assignments", return_value=[])
-    def test_canvas_route_uses_the_shared_entrypoint(self, fetch):
-        result = self.request(
-            "GET",
-            "/api/canvas_sync",
-            environment={"CANVAS_BASE_URL": "https://canvas.example.edu", "CANVAS_TOKEN": "secret"},
-        )
-
+    @patch("api.index.canvas_result", return_value={"success": True, "assignments": []})
+    def test_canvas_route_uses_request_token(self, fetch):
+        result = self.request("POST", "/api/canvas_sync", {"token": "request-secret"})
         self.assertEqual(result["status"], 200)
-        fetch.assert_called_once_with("https://canvas.example.edu", "secret")
+        fetch.assert_called_once_with({"token": "request-secret"})
+
+    def test_canvas_get_cannot_expose_stored_token_data(self):
+        result = self.request("GET", "/api/canvas_sync", environment={"CANVAS_TOKEN": "server-secret"})
+        self.assertEqual(result["status"], 405)
 
     def test_unknown_api_route_is_not_found(self):
         result = self.request("GET", "/api/unknown")

@@ -1,4 +1,4 @@
-import { getProjectTypes, saveSettings, requireSession, wireLogout, id } from './supabaseClient.js?v=3';
+import { getProjectTypes, saveSettings, requireSession, wireLogout, id, getState, saveState } from './supabaseClient.js?v=3';
 
 const session = requireSession();
 if (!session) throw new Error('No session');
@@ -64,7 +64,7 @@ function renderCanvasPreview(assignments) {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.checked = true;
-    checkbox.value = String(assignment.assignment_id ?? index);
+    checkbox.value = String(index);
     const copy = document.createElement('span');
     copy.className = 'canvas-assignment-copy';
     const course = document.createElement('span');
@@ -95,8 +95,26 @@ function renderCanvasPreview(assignments) {
   };
   list.addEventListener('change', updateSelection);
   importButton.addEventListener('click', () => {
-    const selected = list.querySelectorAll('input:checked').length;
-    setCanvasStatus(`${selected}개의 과제를 선택했습니다. 일정 저장 기능은 다음 단계에서 제공됩니다.`, 'success');
+    const state = getState();
+    let added = 0;
+    const now = new Date().toISOString();
+    for (const checkbox of list.querySelectorAll('input:checked')) {
+      const assignment = assignments[Number(checkbox.value)];
+      if (state.tasks.some(task => task.user_id === session.id && task.canvas_course_id === assignment.course_id && task.canvas_assignment_id === assignment.assignment_id)) continue;
+      let project = state.projects.find(item => item.user_id === session.id && item.canvas_course_id === assignment.course_id);
+      if (!project) {
+        project = { id: id(), user_id: session.id, name: assignment.course_name, goal: '수강 과제 일정 관리', project_type: 'school', status: 'active', due_date: null, canvas_course_id: assignment.course_id, created_at: now, updated_at: now };
+        state.projects.push(project);
+      }
+      const due = assignment.due_at ? new Date(assignment.due_at) : null;
+      const dueDate = due && !Number.isNaN(due.getTime()) ? `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,'0')}-${String(due.getDate()).padStart(2,'0')}` : null;
+      state.tasks.push({ id: id(), project_id: project.id, user_id: session.id, title: assignment.title, priority: 'medium', completed: false, planned_date: dueDate, due_date: dueDate, canvas_due_at: assignment.due_at, canvas_course_id: assignment.course_id, canvas_assignment_id: assignment.assignment_id, created_at: now, updated_at: now });
+      added++;
+    }
+    saveState(state);
+    importButton.disabled = true;
+    setCanvasStatus(`${added}개의 과제를 저장했습니다. 이미 가져온 과제는 중복 저장하지 않습니다. 대시보드에서 확인하세요.`, 'success');
+
   });
   actions.append(importButton);
   canvasPreview.append(header, list, actions);
@@ -105,13 +123,21 @@ function renderCanvasPreview(assignments) {
 }
 
 canvasButton.addEventListener('click', async () => {
+  const tokenInput = document.querySelector('#canvas-token');
+  let token = tokenInput.value.trim();
+  if (!token) { setCanvasStatus('본인의 Canvas API 토큰을 입력해주세요.', 'error'); return; }
+  tokenInput.value = '';
   canvasButton.disabled = true;
   canvasPreview.classList.add('hidden');
   setCanvasStatus('Canvas 일정을 불러오고 있습니다...', 'loading');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60000);
   try {
     const response = await fetch('/api/canvas_sync', {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+      signal: controller.signal,
       cache: 'no-store',
     });
     const payload = await response.json().catch(() => ({}));
@@ -123,8 +149,10 @@ canvasButton.addEventListener('click', async () => {
     setCanvasStatus(payload.message || (assignments.length ? `${assignments.length}개의 과제를 찾았습니다.` : '조회된 과제가 없습니다.'), assignments.length ? 'success' : '');
   } catch (error) {
     renderCanvasPreview([]);
-    setCanvasStatus(error.message || '네트워크 오류로 Canvas 일정을 불러오지 못했습니다.', 'error');
+    setCanvasStatus(error.name === 'AbortError' ? 'Canvas 응답 시간이 초과됐습니다. 다시 시도해주세요.' : (error.message || 'Canvas 연결을 확인해주세요.'), 'error');
   } finally {
+    token = "";
+    clearTimeout(timer);
     canvasButton.disabled = false;
   }
 });

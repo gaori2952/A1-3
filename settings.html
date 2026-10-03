@@ -43,6 +43,8 @@
         </div>
         <button class="button button-primary" id="canvas-sync" type="button">Canvas 일정 가져오기</button>
       </div>
+      <label>Canvas API 토큰<input id="canvas-token" type="password" autocomplete="off" spellcheck="false" maxlength="4096" placeholder="본인의 토큰을 입력하세요"></label>
+      <p class="muted">토큰은 이번 조회에만 사용하며 저장하지 않습니다. HTTPS로 이 서비스의 서버를 거쳐 canvas.skku.edu에 전달됩니다. 조회한 과제는 선택한 경우에만 이 브라우저에 저장됩니다.</p>
       <p id="canvas-status" class="canvas-status" role="status" aria-live="polite">Canvas 일정은 확인 후 선택할 수 있으며 자동으로 저장되지 않습니다.</p>
       <div id="canvas-preview" class="canvas-preview hidden" aria-live="polite"></div>
     </section>
@@ -61,6 +63,6 @@
       </form>
     </dialog>
   </main>
-  <script type="module" src="js/settings.js?v=2"></script>
+  <script type="module" src="js/settings.js?v=3"></script>
 </body>
 </html>

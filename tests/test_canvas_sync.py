@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import unittest
@@ -5,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import requests
 
-from api.canvas_sync import fetch_assignments, handler
+from api.canvas_sync import fetch_assignments, handler, canvas_result, CanvasSyncError
 
 
 class FakeResponse:
@@ -13,6 +14,7 @@ class FakeResponse:
         self.status_code = status_code
         self._payload = payload
         self.ok = 200 <= status_code < 300
+        self.links = {}
 
     def json(self):
         return self._payload
@@ -23,14 +25,17 @@ class CanvasSyncTests(unittest.TestCase):
         result = {}
         fake_handler = Mock()
         fake_handler._send.side_effect = lambda status, body: result.update(status=status, body=body)
+        body = json.dumps({"token": environment.get("CANVAS_TOKEN", "")}).encode()
+        fake_handler.headers = {"content-length": str(len(body))}
+        fake_handler.rfile = io.BytesIO(body)
         with patch.dict(os.environ, environment, clear=True):
-            handler.do_GET(fake_handler)
+            handler.do_POST(fake_handler)
         return result
 
     def test_missing_token_is_reported_without_exposing_a_secret(self):
         result = self.invoke_handler({"CANVAS_BASE_URL": "https://canvas.example.edu"})
 
-        self.assertEqual(result["status"], 500)
+        self.assertEqual(result["status"], 400)
         self.assertEqual(result["body"]["code"], "canvas_token_missing")
         self.assertNotIn("Bearer", json.dumps(result["body"]))
 
@@ -117,6 +122,31 @@ class CanvasSyncTests(unittest.TestCase):
 
         self.assertEqual(result["status"], 503)
         self.assertEqual(result["body"]["code"], "canvas_network_error")
+
+    @patch("api.canvas_sync.requests.get")
+    def test_pagination_follows_only_same_host(self, get):
+        first = FakeResponse(200, [])
+        first.links = {"next": {"url": "https://evil.example/api/v1/courses"}}
+        get.return_value = first
+        with self.assertRaises(CanvasSyncError):
+            fetch_assignments("https://canvas.skku.edu", "private-token")
+        self.assertEqual(get.call_count, 1)
+        self.assertFalse(get.call_args.kwargs['allow_redirects'])
+
+    @patch("api.canvas_sync.requests.get")
+    def test_pagination_keeps_all_courses(self, get):
+        first = FakeResponse(200, [])
+        first.links = {"next": {"url": "https://canvas.skku.edu/api/v1/courses?page=2"}}
+        get.side_effect = [first, FakeResponse(200, [{"id": 1}]), FakeResponse(200, [])]
+        self.assertEqual(fetch_assignments("https://canvas.skku.edu", "private-token"), [])
+        self.assertEqual(get.call_count, 3)
+
+    @patch("api.canvas_sync.fetch_assignments")
+    def test_server_saved_token_never_used_without_request_token(self, fetch):
+        with patch.dict(os.environ, {"CANVAS_TOKEN": "server-secret"}):
+            with self.assertRaises(CanvasSyncError):
+                canvas_result({})
+        fetch.assert_not_called()
 
 
 if __name__ == "__main__":
