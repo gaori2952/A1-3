@@ -2,6 +2,8 @@ import json
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import quote, urlsplit
 import time
+import re
+from datetime import date, datetime, timezone, timedelta
 
 import requests
 
@@ -50,16 +52,57 @@ def _canvas_get(url, token, params=None, deadline=None):
     raise CanvasSyncError(422, "canvas_too_many", "조회할 과제가 너무 많습니다. Canvas에서 과목 상태를 확인해주세요.")
 
 
-def fetch_assignments(base_url, token):
+def semester_defaults():
+    today = datetime.now(timezone(timedelta(hours=9))).date()
+    return today.year, 1 if today.month < 8 else 2
+
+
+def matches_semester(course, year, semester):
+    term = course.get("term") or {}
+    if not isinstance(term, dict):
+        term = {}
+    # Prefer explicit academic labels; old courses may still have active enrollments.
+    labels = [str(term.get(key) or "") for key in ("name", "sis_term_id")]
+    labels.extend(str(course.get(key) or "") for key in ("name", "course_code", "sis_course_id"))
+    season = "spring" if semester == 1 else "fall|autumn"
+    patterns = [
+        rf"(?<!\d){year}\s*(?:학년도|학년|년도|년)?\s*[-_./ ]*\s*{semester}\s*(?:학기|semester|term|(?=$|[^\d]))",
+        rf"(?<!\d){year}[\s_./-]+(?:{season})(?![a-z])",
+    ]
+    for label in labels:
+        if any(re.search(pattern, label, re.I) for pattern in patterns):
+            return True
+    # A different explicit year/semester must not be rescued by an open course date.
+    if any(re.search(r"20\d{2}.*(?:학기|spring|fall|autumn)|20\d{2}[-_/][12](?!\d)", label, re.I) for label in labels):
+        return False
+    start_month, end_month = (3, 7) if semester == 1 else (9, 1)
+    window_start = date(year, start_month, 1)
+    window_end = date(year if semester == 1 else year + 1, end_month, 1)
+    for dates in (term, course):
+        try:
+            start = datetime.fromisoformat(dates.get("start_at", "").replace("Z", "+00:00")).date()
+            end = datetime.fromisoformat(dates.get("end_at", "").replace("Z", "+00:00")).date()
+        except (ValueError, TypeError, AttributeError):
+            continue
+        if 0 < (end - start).days <= 200 and window_start <= start < window_end:
+            return True
+    return False
+
+
+def fetch_assignments(base_url, token, year=None, semester=None):
+    default_year, default_semester = semester_defaults()
+    year = default_year if year is None else year
+    semester = default_semester if semester is None else semester
     base_url = base_url.rstrip("/")
     deadline = time.monotonic() + 40
     courses = _canvas_get(
         f"{base_url}/api/v1/courses",
         token,
-        {"enrollment_state": "active", "enrollment_type": "student", "per_page": 100}, deadline,
+        {"enrollment_state": "active", "enrollment_type": "student", "include[]": ["term"], "per_page": 100}, deadline,
     )
+    courses = [course for course in courses if matches_semester(course, year, semester)]
     if len(courses) > 50:
-        raise CanvasSyncError(422, "canvas_too_many", "현재 수강 과목이 너무 많습니다.")
+        raise CanvasSyncError(422, "canvas_too_many", "선택한 학기의 과목이 50개를 넘습니다. 학기 정보를 확인해주세요.")
     assignments = []
 
     for course in courses:
@@ -98,9 +141,13 @@ def canvas_result(payload):
     token = token.strip()
     if len(token) > 4096 or any(character.isspace() for character in token):
         raise CanvasSyncError(400, "canvas_token_invalid", "Canvas 토큰 형식을 확인해주세요.")
-    assignments = fetch_assignments(CANVAS_BASE_URL, token)
+    default_year, default_semester = semester_defaults()
+    year, semester = payload.get("year", default_year), payload.get("semester", default_semester)
+    if type(year) is not int or not 2000 <= year <= 2100 or type(semester) is not int or semester not in (1, 2):
+        raise CanvasSyncError(400, "canvas_invalid_term", "조회할 연도와 학기를 확인해주세요.")
+    assignments = fetch_assignments(CANVAS_BASE_URL, token, year, semester)
     return {"success": True, "assignments": assignments,
-            "message": f"Canvas에서 {len(assignments)}개의 과제를 찾았습니다." if assignments else "현재 수강 과목에서 조회된 과제가 없습니다."}
+            "message": f"{year}년 {semester}학기 과제 {len(assignments)}개를 찾았습니다." if assignments else f"{year}년 {semester}학기에서 확인된 과제가 없습니다. 학기 정보가 없는 과목은 제외했습니다."}
 
 
 class handler(BaseHTTPRequestHandler):

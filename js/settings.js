@@ -11,6 +11,10 @@ const form = document.querySelector('#type-form');
 const canvasButton = document.querySelector('#canvas-sync');
 const canvasStatus = document.querySelector('#canvas-status');
 const canvasPreview = document.querySelector('#canvas-preview');
+const termToday = new Date();
+document.querySelector('#canvas-year').value = termToday.getFullYear();
+document.querySelector('#canvas-semester').value = termToday.getMonth() < 7 ? '1' : '2';
+
 document.querySelectorAll('.modal-close').forEach(button => { button.type = 'button'; button.addEventListener('click', () => button.closest('dialog').close()); });
 
 function render() { list.innerHTML = types.map(type => `<div class="type-row"><span class="topic-dot" style="background:${type.color}"></span><strong>${type.label}</strong><code>${type.key}</code><span class="type-color">${type.color}</span><button class="button button-small button-ghost" data-edit="${type.key}">수정</button><button class="item-delete" data-delete="${type.key}" aria-label="유형 삭제">×</button></div>`).join(''); document.querySelectorAll('[data-edit]').forEach(button => button.addEventListener('click', () => openEditor(button.dataset.edit))); document.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', () => { types = types.filter(type => type.key !== button.dataset.delete); save(); render(); })); }
@@ -136,7 +140,7 @@ canvasButton.addEventListener('click', async () => {
     const response = await fetch('/api/canvas_sync', {
       method: 'POST',
       headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ token, year: Number(document.querySelector("#canvas-year").value), semester: Number(document.querySelector("#canvas-semester").value) }),
       signal: controller.signal,
       cache: 'no-store',
     });

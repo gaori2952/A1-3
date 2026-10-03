@@ -142,3 +142,5 @@ Canvas 연동은 선택 기능이며 별도의 서버 설정이 필요합니다.
 
 ## Canvas 과제 가져오기
 설정 화면에서 본인의 Canvas API 토큰을 입력하고 조회합니다. 학교 주소는 https://canvas.skku.edu 로 고정됩니다. 토큰은 요청에만 사용하고 환경변수·localStorage·로그에 저장하지 않습니다. CANVAS_TOKEN 환경변수는 사용하지 않습니다. 토큰 없이 GET 요청으로 개인 과제를 조회할 수 없습니다. 조회한 목록 중 선택한 과제만 브라우저에 저장하고, 과목별 프로젝트와 마감일 작업을 생성합니다. 이미 저장한 과제는 중복 추가하지 않습니다. 이 저장소는 학습용 브라우저 데모이므로 공유 기기에서 개인 과제를 저장하지 마세요.
+
+Canvas 조회 시 연도·학기를 선택합니다. 과목의 term 이름·학기 코드 또는 학기 날짜로 해당 학기만 선별한 다음 과제 API를 호출합니다. 지난 학기와 학기 정보가 확인되지 않는 과목은 제외합니다. 과목 수 제한은 이 필터링 후에 적용합니다. Canvas 공식 API의 include[]=term을 사용합니다: https://developerdocs.instructure.com/services/canvas/resources/courses

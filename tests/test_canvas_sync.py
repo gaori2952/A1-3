@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import requests
 
-from api.canvas_sync import fetch_assignments, handler, canvas_result, CanvasSyncError
+from api.canvas_sync import fetch_assignments, handler, canvas_result, CanvasSyncError, matches_semester
 
 
 class FakeResponse:
@@ -25,7 +25,7 @@ class CanvasSyncTests(unittest.TestCase):
         result = {}
         fake_handler = Mock()
         fake_handler._send.side_effect = lambda status, body: result.update(status=status, body=body)
-        body = json.dumps({"token": environment.get("CANVAS_TOKEN", "")}).encode()
+        body = json.dumps({"token": environment.get("CANVAS_TOKEN", ""), "year": 2026, "semester": 2}).encode()
         fake_handler.headers = {"content-length": str(len(body))}
         fake_handler.rfile = io.BytesIO(body)
         with patch.dict(os.environ, environment, clear=True):
@@ -54,7 +54,7 @@ class CanvasSyncTests(unittest.TestCase):
     @patch("api.canvas_sync.requests.get")
     def test_assignments_are_normalized_and_sorted(self, get):
         get.side_effect = [
-            FakeResponse(200, [{"id": 7, "name": "수리물리학2"}]),
+            FakeResponse(200, [{"id": 7, "name": "수리물리학2", "term": {"name": "2026학년도 2학기"}}]),
             FakeResponse(
                 200,
                 [
@@ -69,7 +69,7 @@ class CanvasSyncTests(unittest.TestCase):
             ),
         ]
 
-        assignments = fetch_assignments("https://canvas.example.edu/", "secret")
+        assignments = fetch_assignments("https://canvas.example.edu/", "secret", 2026, 2)
 
         self.assertEqual([item["assignment_id"] for item in assignments], [1, 2])
         self.assertEqual(assignments[0]["course_name"], "수리물리학2")
@@ -80,18 +80,18 @@ class CanvasSyncTests(unittest.TestCase):
     @patch("api.canvas_sync.requests.get")
     def test_multiple_courses_are_combined(self, get):
         get.side_effect = [
-            FakeResponse(200, [{"id": 1, "name": "과목 A"}, {"id": 2, "name": "과목 B"}]),
+            FakeResponse(200, [{"id": 1, "name": "과목 A", "term": {"name": "2026-2"}}, {"id": 2, "name": "과목 B", "term": {"name": "2026-2"}}]),
             FakeResponse(200, [{"id": 10, "name": "과제 A", "due_at": None}]),
             FakeResponse(200, [{"id": 20, "name": "과제 B", "due_at": None}]),
         ]
 
-        assignments = fetch_assignments("https://canvas.example.edu", "secret")
+        assignments = fetch_assignments("https://canvas.example.edu", "secret", 2026, 2)
 
         self.assertEqual({item["course_name"] for item in assignments}, {"과목 A", "과목 B"})
 
     @patch("api.canvas_sync.requests.get")
     def test_no_assignments_returns_a_successful_empty_result(self, get):
-        get.side_effect = [FakeResponse(200, [{"id": 1, "name": "과목"}]), FakeResponse(200, [])]
+        get.side_effect = [FakeResponse(200, [{"id": 1, "name": "과목", "term": {"name": "2026-2"}}]), FakeResponse(200, [])]
 
         result = self.invoke_handler(
             {"CANVAS_BASE_URL": "https://canvas.example.edu", "CANVAS_TOKEN": "secret"}
@@ -129,7 +129,7 @@ class CanvasSyncTests(unittest.TestCase):
         first.links = {"next": {"url": "https://evil.example/api/v1/courses"}}
         get.return_value = first
         with self.assertRaises(CanvasSyncError):
-            fetch_assignments("https://canvas.skku.edu", "private-token")
+            fetch_assignments("https://canvas.skku.edu", "private-token", 2026, 2)
         self.assertEqual(get.call_count, 1)
         self.assertFalse(get.call_args.kwargs['allow_redirects'])
 
@@ -137,8 +137,8 @@ class CanvasSyncTests(unittest.TestCase):
     def test_pagination_keeps_all_courses(self, get):
         first = FakeResponse(200, [])
         first.links = {"next": {"url": "https://canvas.skku.edu/api/v1/courses?page=2"}}
-        get.side_effect = [first, FakeResponse(200, [{"id": 1}]), FakeResponse(200, [])]
-        self.assertEqual(fetch_assignments("https://canvas.skku.edu", "private-token"), [])
+        get.side_effect = [first, FakeResponse(200, [{"id": 1, "term": {"name": "2026-2"}}]), FakeResponse(200, [])]
+        self.assertEqual(fetch_assignments("https://canvas.skku.edu", "private-token", 2026, 2), [])
         self.assertEqual(get.call_count, 3)
 
     @patch("api.canvas_sync.fetch_assignments")
@@ -147,6 +147,24 @@ class CanvasSyncTests(unittest.TestCase):
             with self.assertRaises(CanvasSyncError):
                 canvas_result({})
         fetch.assert_not_called()
+
+    def test_semester_labels_and_date_fallback(self):
+        for label in ['2026학년도 2학기', '2026-2', '2026 Fall', '2026_2']:
+            self.assertTrue(matches_semester({'term': {'name': label}}, 2026, 2))
+        for label in ['2025학년도 2학기', '2026-1', '2026 여름학기', 'Default Term']:
+            self.assertFalse(matches_semester({'term': {'name': label}}, 2026, 2))
+        self.assertTrue(matches_semester({'term': {'start_at': '2026-09-01T00:00:00Z', 'end_at': '2026-12-31T00:00:00Z'}}, 2026, 2))
+        self.assertFalse(matches_semester({'start_at': '2020-01-01', 'end_at': '2030-01-01'}, 2026, 2))
+
+    @patch("api.canvas_sync.requests.get")
+    def test_old_courses_are_filtered_before_limit_and_assignment_calls(self, get):
+        courses = [{'id': i, 'term': {'name': '2025-2'}} for i in range(60)]
+        courses.append({'id': 99, 'name': '이번학기', 'term': {'name': '2026-2'}})
+        get.side_effect = [FakeResponse(200, courses), FakeResponse(200, [{'id': 1, 'name': '과제', 'due_at': None}])]
+        result = fetch_assignments('https://canvas.skku.edu', 'secret', 2026, 2)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(get.call_count, 2)
+        self.assertIn('/courses/99/assignments', get.call_args.args[0])
 
 
 if __name__ == "__main__":
