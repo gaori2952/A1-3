@@ -150,15 +150,21 @@ body[data-page="archive"] .archive-item h3{font-size:15px;font-weight:400}
 @media(max-width:600px){.today-pane,.week-pane{padding:18px}.planner-tools{gap:8px}.planner-tools input{width:55%;min-width:0}.planner-tools select{width:45%;min-width:0}.project-task-count{display:none}.project-list-row{gap:10px}.project-board{padding:0 14px}}
 
 
-/* Fixed edge target and delayed hover prevent accidental flicker. */
-:root{--sidebar:0px}
-.topbar{margin-left:0}.shell{margin-left:14px}
-.navigation-drawer{position:fixed;inset:0 auto 0 0;width:14px;z-index:20}
-.navigation-drawer .workspace-sidebar{width:184px;height:100dvh;transform:translateX(-100%);opacity:0;visibility:hidden;pointer-events:none;box-shadow:8px 0 24px #343b4200;transition:transform 260ms cubic-bezier(.4,0,.2,1),opacity 200ms ease,box-shadow 260ms ease,visibility 0s linear 260ms}
-.menu-toggle{position:absolute;inset:0;width:14px;padding:0;border:0;background:transparent;color:#617ca4;z-index:21}
-.menu-toggle span{display:block;width:3px;height:28px;background:#aeb8c7;border-radius:2px;margin:auto;transition:opacity 180ms ease,background 180ms ease}
-.menu-toggle:focus-visible{outline:2px solid #617ca4;outline-offset:-2px}
-.navigation-drawer:is(.menu-open,.hover-open) .workspace-sidebar,.navigation-drawer:has(.sidebar-link:focus-visible) .workspace-sidebar{transform:translateX(0);opacity:1;visibility:visible;pointer-events:auto;box-shadow:10px 0 32px #343b4214;transition:transform 340ms cubic-bezier(.22,1,.36,1),opacity 260ms ease,box-shadow 340ms ease,visibility 0s}
-.navigation-drawer:is(.menu-open,.hover-open) .menu-toggle span{opacity:0}
-@media(max-width:800px){.shell{margin-left:0}.navigation-drawer{width:0}.navigation-drawer .workspace-sidebar{position:fixed;inset:0 auto 0 0;display:flex;flex-direction:column;width:184px;height:100dvh;padding:30px 16px;border-right:1px solid var(--border)}.navigation-drawer .workspace-sidebar nav{display:block;overflow:visible;margin-top:24px}.navigation-drawer .sidebar-link{text-align:left;padding:13px 12px;font-size:15px;margin:5px 0}.navigation-drawer .sidebar-link.selected::after{left:12px;bottom:7px}.navigation-drawer .sidebar-footer{display:block;margin-top:auto}.navigation-drawer .sidebar-brand{padding:34px 12px 0}.menu-toggle{position:fixed;inset:12px auto auto 12px;width:32px;height:28px;background:#f5f6fa;border:1px solid #dfe3e9;border-radius:4px}.menu-toggle span{width:14px;height:2px;background:#617ca4;box-shadow:0 -5px #617ca4,0 5px #617ca4}.navigation-drawer.menu-open .menu-toggle span{opacity:1}.topbar{padding-left:56px}}
-@media(prefers-reduced-motion:reduce){.navigation-drawer .workspace-sidebar,.menu-toggle span{transition:none}}
+
+/* Desktop icon rail expands over the workspace; mobile uses a bottom bar. */
+:root{--sidebar:60px}
+.topbar{margin-left:60px}.shell{margin-left:60px}
+.navigation-drawer{position:fixed;inset:0 auto 0 0;width:60px;z-index:20}
+.navigation-drawer .workspace-sidebar{width:60px;height:100dvh;padding:30px 10px;background:#f5f6fa;overflow:hidden;box-shadow:8px 0 24px #343b4200;transition:width 260ms cubic-bezier(.4,0,.2,1),box-shadow 260ms ease}
+.navigation-drawer .sidebar-brand{height:32px;padding:0 8px;gap:14px;white-space:nowrap;margin-bottom:44px;flex-shrink:0}
+.nav-icon{width:22px;height:22px;flex:0 0 22px}
+.navigation-drawer .sidebar-link{display:flex;align-items:center;width:162px;gap:14px;padding:13px 8px;min-height:48px;white-space:nowrap}
+.navigation-drawer .sidebar-link.selected::after{left:8px;bottom:5px;width:22px}
+.nav-label,.brand-label{opacity:0;transform:translateX(-5px);transition:opacity 150ms ease,transform 200ms ease}
+.navigation-drawer .sidebar-status,.navigation-drawer .sidebar-logout{visibility:hidden;opacity:0;white-space:nowrap;transition:opacity 150ms ease}
+.navigation-drawer.hover-open .workspace-sidebar,.navigation-drawer:has(.sidebar-link:focus-visible) .workspace-sidebar{width:184px;box-shadow:10px 0 32px #343b4214;transition:width 340ms cubic-bezier(.22,1,.36,1),box-shadow 340ms ease}
+.navigation-drawer.hover-open .nav-label,.navigation-drawer.hover-open .brand-label,.navigation-drawer:has(.sidebar-link:focus-visible) .nav-label,.navigation-drawer:has(.sidebar-link:focus-visible) .brand-label{opacity:1;transform:translateX(0);transition:opacity 240ms ease 55ms,transform 280ms cubic-bezier(.22,1,.36,1)}
+.navigation-drawer.hover-open .sidebar-status,.navigation-drawer.hover-open .sidebar-logout,.navigation-drawer:has(.sidebar-link:focus-visible) .sidebar-status,.navigation-drawer:has(.sidebar-link:focus-visible) .sidebar-logout{visibility:visible;opacity:1}
+.navigation-drawer .sidebar-link:focus-visible{outline-offset:-2px}
+@media(max-width:800px){:root{--sidebar:0px}.shell{margin-left:0;padding-bottom:calc(100px + env(safe-area-inset-bottom))}.topbar{margin-left:0}.navigation-drawer{inset:auto 0 0;width:100%;height:auto}.navigation-drawer .workspace-sidebar,.navigation-drawer.hover-open .workspace-sidebar,.navigation-drawer:has(.sidebar-link:focus-visible) .workspace-sidebar{position:relative;inset:auto;width:100%;height:auto;padding:8px 8px calc(8px + env(safe-area-inset-bottom));display:block;border-right:0;border-top:1px solid #dfe3e9;background:#f8f9fb;box-shadow:0 -4px 18px #343b4208;overflow:visible;transition:none}.navigation-drawer .sidebar-brand,.navigation-drawer .sidebar-footer{display:none}.navigation-drawer .workspace-sidebar nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;margin:0;overflow:visible}.navigation-drawer .sidebar-link{width:auto;min-height:49px;display:flex;flex-direction:column;gap:4px;padding:5px 2px;margin:0;text-align:center;font-size:10px;border:0}.navigation-drawer .nav-icon{width:20px;height:20px;flex:0 0 20px}.navigation-drawer .nav-label{opacity:1;transform:none;transition:none}.navigation-drawer .sidebar-link.selected{color:#405979}.navigation-drawer .sidebar-link.selected::after{left:50%;transform:translateX(-50%);top:0;bottom:auto;width:20px;height:2px}.planner-heading{gap:10px}.week-controls{row-gap:8px}}
+@media(prefers-reduced-motion:reduce){.navigation-drawer .workspace-sidebar,.nav-label,.brand-label{transition:none!important}}
