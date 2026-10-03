@@ -1,58 +1,40 @@
 import { wireProjectDeletion } from './projectDeleteUI.js?v=1';
-import { getState, saveState, requireSession, projectProgress, id, todayKey, addDays, getSettings, getProjectTypes, wireLogout, escapeHtml } from './supabaseClient.js?v=3';
-
-const session = requireSession();
-if (!session) throw new Error('No session');
-wireLogout();
-wireProjectDeletion(session);
-const state = getState();
-const today = todayKey();
-const typeLabels = { school: '학교', home: '집', work: '업무', study: '공부', development: '개발', research: '연구', content: '콘텐츠', personal: '개인', other: '기타' };
-const projectTypes = getProjectTypes(session.id);
-const priorityLabels = { low: '낮음', medium: '보통', high: '높음' };
-const projectById = projectId => state.projects.find(project => project.id === projectId);
-const taskProject = task => projectById(task.project_id);
-const topicLabel = key => projectTypes.find(type => type.key === key)?.label || typeLabels[key] || '기타';
-const typeSelect = document.querySelector('select[name="project_type"]');
-if (typeSelect) typeSelect.innerHTML = projectTypes.map(type => `<option value="${type.key}">${escapeHtml(type.label)}</option>`).join('');
-
-function taskRow(task) {
-	const project = taskProject(task);
-	return `<div class="schedule-task"><input class="task-check" type="checkbox" data-dashboard-task="${task.id}" ${task.completed ? 'checked' : ''}><span class="calendar-dot topic-${project?.project_type || 'other'}"></span><div class="schedule-task-copy"><strong>${escapeHtml(task.title)}</strong>${Number.isInteger(task.duration_minutes) ? `<span>${task.duration_minutes}분</span>` : ""}<span>${escapeHtml(project?.name || '')}</span></div><span class="priority ${task.priority}">${priorityLabels[task.priority]}</span></div>`;
-}
-
-function renderToday() {
-	const todayTasks = state.tasks.filter(task => task.user_id === session.id && task.planned_date === today && !task.completed);
-	const overdue = state.tasks.filter(task => task.user_id === session.id && task.planned_date && task.planned_date < today && !task.completed);
-	document.querySelector('#today-count').textContent = todayTasks.length;
-	document.querySelector('#overdue-count').textContent = overdue.length;
-	document.querySelector('#today-label').textContent = new Date(`${today}T12:00:00`).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
-	document.querySelector('#today-list').innerHTML = todayTasks.length ? todayTasks.map(taskRow).join('') : `<div class="inline-empty">오늘 예정된 작업이 없습니다.<button class="button button-small button-ghost" id="empty-plan">2주 계획 만들기</button></div>`;
-	document.querySelector('#overdue-list').innerHTML = overdue.length ? overdue.map(taskRow).join('') : '<div class="inline-empty">밀린 작업이 없습니다.</div>';
-	const emptyPlan = document.querySelector('#empty-plan');
-	if (emptyPlan) emptyPlan.addEventListener('click', openPlanner);
-}
-
-function renderCalendar() {
-	const activeTasks = state.tasks.filter(task => task.user_id === session.id && !task.completed && task.planned_date);
-	document.querySelector('#calendar').innerHTML = Array.from({ length: 14 }, (_, index) => {
-		const date = addDays(today, index);
-		const dayTasks = activeTasks.filter(task => task.planned_date === date);
-		const dateLabel = new Date(`${date}T12:00:00`).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric', weekday: 'short' });
-		return `<article class="calendar-day ${index === 0 ? 'today' : ''}"><header><strong>${dateLabel}</strong>${index === 0 ? '<span>오늘</span>' : ''}</header><div>${dayTasks.length ? dayTasks.map(task => `<a class="calendar-task" href="project.html?id=${task.project_id}"><span class="calendar-dot topic-${taskProject(task)?.project_type || 'other'}"></span><span>${escapeHtml(task.title)}</span></a>`).join('') : '<span class="calendar-empty">-</span>'}</div></article>`;
-	}).join('');
-}
-
-function renderProjects() {
-	const projects = state.projects.filter(project => project.user_id === session.id && project.status === 'active');
-	document.querySelector('#active-count').textContent = projects.length;
-	document.querySelector('#project-count').textContent = `${projects.length}개 프로젝트`;
-	document.querySelector('#project-grid').innerHTML = projects.map(project => { const tasks = state.tasks.filter(task => task.project_id === project.id); const progress = projectProgress(project.id, state); return `<div class="project-entry"><a class="project-card" href="project.html?id=${project.id}"><div><div class="card-top"><span class="status active">진행 중</span><span class="progress-meta">${progress}%</span></div><h3>${escapeHtml(project.name)}</h3><p>${escapeHtml(project.goal)}</p></div><div><div class="progress-track"><div class="progress-bar" style="width:${progress}%"></div></div><div class="card-bottom"><span class="muted">${tasks.filter(task => task.completed).length} / ${tasks.length}개 작업</span><span class="muted">${project.due_date ? `마감 ${project.due_date}` : '마감일 없음'}</span></div></div><span class="project-type">${typeLabels[project.project_type] || '기타'} →</span></a><button type="button" class="button button-ghost button-small" data-delete-project="${project.id}" aria-label="${escapeHtml(project.name)} 프로젝트 삭제">삭제</button></div>`; }).join(''); document.querySelector('#empty-state').classList.toggle('hidden', projects.length > 0); document.querySelector('#project-grid').classList.toggle('hidden', projects.length === 0);
-}
-
-function render() { renderToday(); renderCalendar(); renderProjects(); document.querySelectorAll('[data-dashboard-task]').forEach(input => input.addEventListener('change', () => { const task = state.tasks.find(item => item.id === input.dataset.dashboardTask); task.completed = input.checked; task.updated_at = new Date().toISOString(); saveState(state); render(); })); }
+import { getState, saveState, requireSession, projectProgress, id, todayKey, addDays, getSettings, getProjectTypes, wireLogout, escapeHtml } from './supabaseClient.js?v=4';
+import { weekDates, timedEvents } from './plannerView.js';
+const session=requireSession();if(!session)throw new Error('No session');
+wireLogout();wireProjectDeletion(session);
+const state=getState(),today=todayKey();
+const typeLabels={school:'학교',home:'집',work:'업무',study:'공부',development:'개발',research:'연구',content:'콘텐츠',personal:'개인',other:'기타'};
+const priorityLabels={low:'낮음',medium:'보통',high:'높음'};
+const projectTypes=getProjectTypes(session.id);
+const projectById=pid=>state.projects.find(p=>p.id===pid&&p.user_id===session.id);
+const taskProject=t=>projectById(t.project_id);
+const topicLabel=key=>projectTypes.find(t=>t.key===key)?.label||typeLabels[key]||'기타';
+const typeSelect=document.querySelector('select[name="project_type"]');
+if(typeSelect)typeSelect.innerHTML=projectTypes.map(t=>'<option value="'+t.key+'">'+escapeHtml(t.label)+'</option>').join('');
+const view=new URLSearchParams(location.search).get('view')||'today';
+document.querySelector('#workspace-view').classList.toggle('hidden',view!=='today');
+document.querySelector('#projects-section').classList.toggle('hidden',view==='ai');
+document.querySelector('#ai-view').classList.toggle('hidden',view!=='ai');
+document.querySelector('#view-title').textContent=view==='projects'?'프로젝트, 한눈에.':view==='ai'?'AI와 다음 단계를.':'오늘, 한 걸음씩.';
+document.querySelector('#view-description').textContent=view==='projects'?'예정부터 완료까지, 프로젝트의 흐름을 정리하세요.':view==='ai'?'일정 추천과 진행 분석을 필요할 때 사용하세요.':'오늘 할 일과 이번 주 일정을 한눈에 확인하세요.';
+document.querySelector('#planner-date').textContent=new Date(today+'T12:00:00').toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+let weekOffset=0,selectedTaskId=null,focusedTaskId=null;
+const ownedTasks=()=>state.tasks.filter(t=>t.user_id===session.id&&taskProject(t));
+const timeText=t=>t.start_time?(t.start_time+' · '+(t.duration_minutes||60)+'분'):(t.planned_date?'시간 미정':'날짜 미정');
+function taskRow(task){const p=taskProject(task);return '<div class="planner-task '+(focusedTaskId===task.id?'selected':'')+'"><input type="checkbox" class="task-check" data-dashboard-task="'+task.id+'" '+(task.completed?'checked':'')+' aria-label="'+escapeHtml(task.title)+' 완료"><button class="task-select" data-edit-time="'+task.id+'"><strong>'+escapeHtml(task.title)+'</strong><small>'+escapeHtml(p?.name||'')+' · '+timeText(task)+'</small></button><span class="priority '+task.priority+'">'+priorityLabels[task.priority]+'</span></div>';}
+function renderToday(){const tasks=ownedTasks().filter(t=>!t.completed);const current=tasks.filter(t=>t.planned_date===today||(!t.planned_date&&t.due_date===today));const late=tasks.filter(t=>(t.due_date||t.planned_date)&&(t.due_date||t.planned_date)<today);document.querySelector('#today-count').textContent=current.length;document.querySelector('#overdue-count').textContent=late.length;document.querySelector('#today-label').textContent=new Date(today+'T12:00:00').toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'});document.querySelector('#today-list').innerHTML=current.length?current.map(taskRow).join(''):'<div class="planner-empty">오늘 예정된 작업이 없어요.<br>프로젝트에서 작업을 추가하거나 날짜를 지정하세요.</div>';document.querySelector('#overdue-list').innerHTML=late.map(taskRow).join('');document.querySelector('#overdue-section').classList.toggle('hidden',!late.length);}
+function pastel(p){const index=state.projects.filter(p=>p.user_id===session.id).findIndex(x=>x.id===p?.id);return 'pastel-'+Math.max(0,index)%6;}
+function renderCalendar(){const days=weekDates(today,weekOffset),tasks=ownedTasks().filter(t=>!t.completed);const events=days.map(day=>timedEvents(tasks,day));const all=events.flat();const first=Math.min(8,...all.map(e=>Math.floor(e.start/60)));const last=Math.max(20,...all.map(e=>Math.ceil(e.end/60)));const height=(last-first)*48;document.querySelector('#week-label').textContent=days[0].slice(5).replace('-','.')+' — '+days[6].slice(5).replace('-','.');const loose=tasks.filter(t=>!t.start_time&&(!t.planned_date||days.includes(t.planned_date)));document.querySelector('#unscheduled-list').innerHTML=loose.length?loose.map(t=>'<button data-edit-time="'+t.id+'" class="loose-task '+pastel(taskProject(t))+'">'+escapeHtml(t.title)+'</button>').join(''):'<span class="muted">시간 미정 작업이 없습니다.</span>';const head='<div class="time-gutter"></div>'+days.map((day,i)=>'<div class="time-day '+(day===today?'is-today':'')+'"><span>'+['월','화','수','목','금','토','일'][i]+'</span><strong>'+Number(day.slice(8))+'</strong></div>').join('');const hours='<div class="hour-labels" style="height:'+height+'px">'+Array.from({length:last-first},(_,i)=>'<span style="top:'+(i*48)+'px">'+String(first+i).padStart(2,'0')+':00</span>').join('')+'</div>';document.querySelector('#calendar').innerHTML=head+hours+days.map((day,i)=>'<div class="time-day-column" style="height:'+height+'px">'+events[i].map(e=>'<button class="time-event '+pastel(taskProject(e.task))+'" data-edit-time="'+e.task.id+'" style="top:'+((e.start-first*60)*.8)+'px;height:'+Math.max(22,(e.end-e.start)*.8)+'px;left:calc('+e.lane*100/e.lanes+'% + 3px);width:calc('+100/e.lanes+'% - 6px)" title="'+escapeHtml(e.task.title)+'"><strong>'+escapeHtml(e.task.title)+'</strong><small>'+e.task.start_time+'</small></button>').join('')+'</div>').join('');}
+function renderProjects(){const projects=state.projects.filter(p=>p.user_id===session.id&&p.status!=='archived');document.querySelector('#active-count').textContent=projects.length;document.querySelector('#project-count').textContent='상태 메뉴로 변경할 수 있어요';document.querySelector('#project-grid').innerHTML=['planned','active','completed'].map((status,i)=>{const list=projects.filter(p=>(p.status||'active')===status);return '<section class="board-column"><h3>'+['예정','진행','완료'][i]+'<span>'+list.length+'</span></h3>'+list.map(p=>{const ts=ownedTasks().filter(t=>t.project_id===p.id);const progress=projectProgress(p.id,state);return '<article class="board-project"><a href="project.html?id='+p.id+'"><span class="project-color '+pastel(p)+'"></span><h4>'+escapeHtml(p.name)+'</h4><p>'+escapeHtml(p.goal||'')+'</p><small>'+ts.filter(t=>t.completed).length+' / '+ts.length+'개 작업'+(p.due_date?' · '+p.due_date:'')+'</small><div class="progress-track"><div class="progress-bar" style="width:'+progress+'%"></div></div></a><div class="board-actions"><select data-project-status="'+p.id+'" aria-label="'+escapeHtml(p.name)+' 상태">'+['planned','active','completed'].map((s,j)=>'<option value="'+s+'" '+(s===status?'selected':'')+'>'+['예정','진행','완료'][j]+'</option>').join('')+'</select><button class="button button-ghost button-small" data-delete-project="'+p.id+'" aria-label="'+escapeHtml(p.name)+' 프로젝트 삭제">삭제</button></div></article>';}).join('')+(list.length?'':'<p class="board-empty">프로젝트가 없습니다.</p>')+'</section>';}).join('');document.querySelector('#empty-state').classList.toggle('hidden',projects.length>0);document.querySelector('#project-grid').classList.toggle('hidden',!projects.length);document.querySelector('#ai-project-list').innerHTML=projects.length?projects.map(p=>'<a class="ai-project-row" href="insights.html?id='+p.id+'"><span>'+escapeHtml(p.name)+'</span><small>진행 분석 →</small></a>').join(''):'<p class="planner-empty">먼저 프로젝트를 만들어주세요.</p>';}
+function render(){renderToday();renderCalendar();renderProjects();}
+document.addEventListener('change',event=>{const input=event.target;if(input.dataset.dashboardTask){const t=ownedTasks().find(t=>t.id===input.dataset.dashboardTask);if(t){t.completed=input.checked;t.updated_at=new Date().toISOString();saveState(state);render();}}if(input.dataset.projectStatus){const p=projectById(input.dataset.projectStatus);if(p&&['planned','active','completed'].includes(input.value)){p.status=input.value;p.updated_at=new Date().toISOString();saveState(state);render();}}});
+const timeModal=document.querySelector('#task-time-modal'),timeForm=document.querySelector('#task-time-form');
+document.addEventListener('click',event=>{const button=event.target.closest('[data-edit-time]');if(!button)return;const task=ownedTasks().find(t=>t.id===button.dataset.editTime);if(!task)return;selectedTaskId=task.id;focusedTaskId=task.id;renderToday();document.querySelector('#time-task-title').textContent=task.title;timeForm.elements.date.value=task.planned_date||'';timeForm.elements.time.value=task.start_time||'';timeForm.elements.duration.value=task.duration_minutes||60;document.querySelector('#time-error').textContent='';timeModal.showModal();});
+document.querySelectorAll('[data-close-time]').forEach(b=>b.addEventListener('click',()=>timeModal.close()));
+timeForm.addEventListener('submit',event=>{event.preventDefault();const task=ownedTasks().find(t=>t.id===selectedTaskId);if(!task)return;const day=timeForm.elements.date.value,time=timeForm.elements.time.value,duration=Number(timeForm.elements.duration.value);if(time&&!day){document.querySelector('#time-error').textContent='시간을 지정하려면 날짜도 선택해주세요.';return;}const [h,m]=(time||'00:00').split(':').map(Number);if(!Number.isInteger(duration)||duration<15||duration>480||(time&&h*60+m+duration>1440)){document.querySelector('#time-error').textContent='소요 시간은 15~480분이며 같은 날짜 안에 끝나야 합니다.';return;}task.planned_date=day||null;task.start_time=time||null;task.duration_minutes=duration;task.updated_at=new Date().toISOString();saveState(state);timeModal.close();render();});
+document.querySelector('#week-prev').onclick=()=>{weekOffset--;renderCalendar();};document.querySelector('#week-next').onclick=()=>{weekOffset++;renderCalendar();};document.querySelector('#week-today').onclick=()=>{weekOffset=0;renderCalendar();};
 render();
-
 const projectModal = document.querySelector('#project-modal');
 document.querySelectorAll('[data-open-project]').forEach(button => button.addEventListener('click', () => projectModal.showModal()));
 document.querySelectorAll('.modal-close').forEach(button => { button.type = 'button'; button.addEventListener('click', () => button.closest('dialog').close()); });
