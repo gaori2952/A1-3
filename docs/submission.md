@@ -26,6 +26,7 @@
 | ai-schedule.jpg | 실제 AI 일정 추천 |
 | ai-analysis.jpg | 실제 AI 분석 결과 |
 | starter-before.png | AI 코딩 협업 중 제시한 개선 전 화면 |
-| canvas-semester.jpg | 학기 선택 UI 개선 당시 화면 |
+| ai-long-input.jpg | 293자 질문의 실제 AI 응답 |
+| canvas-semester.jpg | 현재 학기 선택·개인 연동 코드 화면 |
 
 실제 화면 캡처와 mock 검증은 [verification.md](verification.md)에서 구분합니다. 토큰과 개인 학사 데이터는 제출 자료에 포함하지 않았습니다.
