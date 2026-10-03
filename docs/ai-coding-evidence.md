@@ -21,7 +21,7 @@
 외부 API mock 테스트와 실제 배포 화면 검증을 구분합니다. 테스트 통과를 실제 모델 호출 성공으로 주장하지 않습니다. 실제 키는 Vercel 환경변수에만 설정하며 대화·증빙에는 포함하지 않습니다.
 
 ## 원문 증빙
-[실제 대화 발췌](ai-coding-conversation.md)와 [시작 플랜 개선 요청 원본 이미지](screenshots/starter-before.png)를 저장소에 포함했습니다. 코드 변경은 GitHub 커밋 이력으로 확인할 수 있습니다.
+[AI 코딩 협업 기록](ai-coding-conversation.md)와 [시작 플랜 개선 요청 원본 이미지](screenshots/starter-before.png)를 저장소에 포함했습니다. 코드 변경은 GitHub 커밋 이력으로 확인할 수 있습니다.
 
 
 실제 AI 일정 추천과 프로젝트 분석의 성공 화면은 [검증 현황](verification.md)에서 확인할 수 있습니다.

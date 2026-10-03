@@ -9,7 +9,7 @@
 | README | [README.md](../README.md) |
 | 서비스 기획서 | [service-plan.md](service-plan.md) |
 | 데스크톱·모바일·AI 기능 증빙 | [screenshots/](screenshots/) |
-| AI 코딩 도구 사용 과정 | [실제 대화 발췌](ai-coding-conversation.md), [변경 기록](ai-coding-evidence.md) |
+| AI 코딩 도구 사용 과정 | [AI 코딩 협업 기록](ai-coding-conversation.md), [변경 기록](ai-coding-evidence.md) |
 
 ## 화면 증빙
 

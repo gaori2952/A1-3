@@ -51,7 +51,7 @@ Canvas는 연도·학기를 선택하고 개인 토큰으로 조회합니다. �
 
 </details>
 
-[전체 스크린샷과 검증 현황](docs/verification.md) · [실제 AI 코딩 대화 발췌](docs/ai-coding-conversation.md)
+[전체 스크린샷과 검증 현황](docs/verification.md) · [AI 코딩 협업 기록](docs/ai-coding-conversation.md)
 
 ## 기술 스택과 역할
 | 기술 | 역할 |
