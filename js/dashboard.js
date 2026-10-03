@@ -92,7 +92,7 @@ async function createProject(data, useAi) {
       location.href = `project.html?id=${project.id}`;
     };
   } catch (error) {
-    status.textContent = error.name === 'AbortError' ? 'AI 응답 시간이 초과됐습니다. 다시 시도하거나 빈 프로젝트로 시작해주세요.' : (error instanceof TypeError ? '네트워크 연결을 확인해주세요.' : error.message);
+    status.textContent = error.name === 'AbortError' ? 'AI 응답 시간이 초과됐습니다. 다시 시도하거나 직접 작업을 추가해주세요.' : (error instanceof TypeError ? '네트워크 연결을 확인해주세요.' : error.message);
   } finally {
     clearTimeout(timer);
     button.disabled = false;
