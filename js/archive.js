@@ -19,5 +19,5 @@ const taskRows = tasks.map(task => {
   return `<a class="archive-item" href="project.html?id=${encodeURIComponent(task.project_id)}"><div><h3>✓ ${escapeHtml(task.title)}</h3><p>${escapeHtml(project.name)}</p></div><span class="archive-date">${dateLabel(task.updated_at)} · 완료 →</span></a>`;
 }).join('');
 document.querySelector('#archive-list').innerHTML = `
-  <section><div class="section-heading"><h2>완료·보관한 프로젝트</h2><span class="muted">${projects.length}개</span></div>${projectRows || '<p class="muted">모든 작업을 완료한 프로젝트가 여기에 표시됩니다.</p>'}</section>
-  <section><div class="section-heading"><h2>완료한 작업</h2><span class="muted">${tasks.length}개</span></div>${taskRows || '<p class="muted">작업의 완료 체크박스를 선택하면 여기에 표시됩니다.</p>'}</section>`;
+  <section class="archive-group"><div class="section-heading"><h2>완료·보관한 프로젝트</h2><span class="archive-count">${projects.length}개</span></div>${projectRows || '<p class="archive-empty">모든 작업을 완료한 프로젝트가 여기에 표시됩니다.</p>'}</section>
+  <section class="archive-group"><div class="section-heading"><h2>완료한 작업</h2><span class="archive-count">${tasks.length}개</span></div>${taskRows || '<p class="archive-empty">작업의 완료 체크박스를 선택하면 여기에 표시됩니다.</p>'}</section>`;
