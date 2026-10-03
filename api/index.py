@@ -2,7 +2,9 @@ import json
 import os
 from datetime import date, timedelta
 from http.server import BaseHTTPRequestHandler
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, unquote
+from pathlib import Path
+import mimetypes
 
 from api.canvas_sync import CanvasSyncError, fetch_assignments
 
@@ -87,6 +89,9 @@ def create_schedule(payload):
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        if not self._path().startswith("/api/"):
+            self._serve_static()
+            return
         if self._path() != "/api/canvas_sync":
             self._send(404, {"success": False, "message": "API 경로를 찾을 수 없습니다."})
             return
@@ -131,6 +136,39 @@ class handler(BaseHTTPRequestHandler):
             self._send(400, {"success": False, "message": "올바른 JSON 요청이 필요합니다."})
         except Exception:
             self._send(500, {"success": False, "message": "요청을 처리하지 못했습니다."})
+
+
+    def _serve_static(self):
+        root = Path(__file__).resolve().parent.parent
+        path = unquote(self._path())
+        if path == "/":
+            path = "/index.html"
+        relative = path.lstrip("/")
+        allowed_pages = {
+            "index.html", "login.html", "project.html", "insights.html",
+            "settings.html", "archive.html",
+        }
+        asset = Path(relative)
+        allowed_asset = (
+            asset.parts and asset.parts[0] in {"css", "js"}
+            and asset.suffix.lower() in {".css", ".js", ".map"}
+        )
+        target = (root / relative).resolve()
+        if (
+            not (relative in allowed_pages or allowed_asset)
+            or not target.is_relative_to(root)
+            or not target.is_file()
+        ):
+            self._send(404, {"success": False, "message": "페이지를 찾을 수 없습니다."})
+            return
+        content = target.read_bytes()
+        content_type = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
+        self.send_response(200)
+        self.send_header("Content-Type", content_type + "; charset=utf-8")
+        self.send_header("Content-Length", str(len(content)))
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        self.wfile.write(content)
 
     def _path(self):
         return urlsplit(self.path).path.rstrip("/") or "/"
