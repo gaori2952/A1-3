@@ -6,7 +6,7 @@
   <main class="shell dashboard-shell planner-shell">
     <header class="planner-heading"><div><p class="eyebrow" id="planner-date"></p><h1 id="view-title">오늘, 한 걸음씩.</h1><p class="lede" id="view-description">오늘 할 일과 이번 주 일정을 한눈에 확인하세요.</p></div><button class="button button-primary" data-open-project>＋ 새 프로젝트</button></header>
     <div id="workspace-view" class="planner-workspace">
-      <section id="today-section" class="today-pane"><div class="section-heading"><h2>오늘 할 일 <span id="today-count" class="small-count"></span></h2><span id="today-label" class="muted"></span></div><div id="today-list"></div><section id="overdue-section"><div class="section-heading"><h3>마감이 지난 작업 <span id="overdue-count" class="small-count"></span></h3></div><div id="overdue-list"></div></section><p class="planner-tip">작업을 선택하면 날짜와 시간을 조정할 수 있어요.</p></section>
+      <section id="today-section" class="today-pane"><div class="section-heading"><h2>오늘 할 일 <span id="today-count" class="small-count"></span></h2><span id="today-label" class="muted"></span></div><div id="today-list"></div><section id="overdue-section"><div class="section-heading"><h3>미룬 작업 <span id="overdue-count" class="small-count"></span></h3></div><div id="overdue-list"></div></section><p class="planner-tip">작업을 선택하면 날짜와 시간을 조정할 수 있어요.</p></section>
       <section class="week-pane"><div class="section-heading"><h2>이번 주</h2><div class="week-controls"><button class="week-arrow" id="week-prev" aria-label="이전 주">‹</button><span id="week-label"></span><button class="week-arrow" id="week-next" aria-label="다음 주">›</button><button class="week-today" id="week-today">오늘</button></div></div><div class="unscheduled"><span>시간 미정</span><div id="unscheduled-list"></div></div><div class="week-scroll"><div id="calendar" class="time-calendar"></div></div><div class="week-footer"><span>시간이 있는 작업만 시간표에 표시됩니다.</span><button class="button button-small button-ghost" id="plan-button">날짜 자동 배치</button></div></section>
     </div>
     <section id="projects-section" class="project-board-section"><div class="section-heading"><h2>프로젝트 <span id="active-count" class="small-count"></span></h2><span id="project-count" class="muted"></span></div><div id="project-grid" class="project-board"></div><section id="empty-state" class="empty-state hidden"><h2>첫 프로젝트를 시작해보세요.</h2><p>목표를 입력하면 AI가 실행 일정을 제안합니다.</p><button class="button button-primary" data-open-project>＋ 새 프로젝트</button></section></section>
@@ -19,4 +19,5 @@
   <script type="module" src="js/dashboard.js?v=7"></script>
 </body>
 </html>
+
 
