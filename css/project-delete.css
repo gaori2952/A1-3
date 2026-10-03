@@ -44,3 +44,12 @@ body .project-delete-modal .button-danger{background:#b94e47;border-color:#b94e4
 body .project-delete-modal .button-danger:hover{background:#a3423c;border-color:#a3423c}
 body .project-delete-modal .button:focus-visible{outline:2px solid #7e8da6;outline-offset:3px}
 @media(max-width:600px){body .project-delete-modal form{padding:24px}body .project-delete-modal h2{font-size:21px}}
+
+/* Project row actions */
+body button[data-delete-project]{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:6px 9px;border:0;border-radius:7px;background:transparent;color:#8b929b;font-size:12px;font-weight:500;white-space:nowrap;transition:background .15s,color .15s}
+body button[data-delete-project]::before{content:"";width:14px;height:14px;flex-shrink:0;background:currentColor;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6'/%3E%3C/svg%3E") center/contain no-repeat}
+body button[data-delete-project]:hover{background:#fbeeed;color:#b94e47}
+body button[data-delete-project]:focus-visible{outline:2px solid #b94e47;outline-offset:2px}
+body .project-entry>button[data-delete-project],body .archive-project-entry>button[data-delete-project]{margin-right:18px}
+body .project-progress button[data-delete-project]{margin-top:16px;margin-left:auto}
+@media(max-width:600px){body .project-progress button[data-delete-project]{margin-left:0}}
