@@ -1,8 +1,10 @@
+import { wireProjectDeletion } from './projectDeleteUI.js?v=1';
 import { getState, requireSession, wireLogout, escapeHtml } from './supabaseClient.js?v=3';
 import { archiveEntries } from './archiveView.js';
 const session = requireSession();
 if (!session) throw new Error('No session');
 wireLogout();
+wireProjectDeletion(session);
 const state = getState();
 const {projects, tasks} = archiveEntries(state, session.id);
 const dateLabel = value => {
@@ -12,7 +14,7 @@ const dateLabel = value => {
 const projectRows = projects.map(project => {
   const projectTasks = state.tasks.filter(task => task.project_id === project.id && task.user_id === session.id);
   const complete = projectTasks.length > 0 && projectTasks.every(task => task.completed);
-  return `<a class="archive-item" href="project.html?id=${encodeURIComponent(project.id)}"><div><h3>${escapeHtml(project.name)}</h3><p>${escapeHtml(project.goal || '')}</p></div><span class="archive-date">${dateLabel(project.updated_at)} · ${complete ? '모든 작업 완료' : '보관됨'} →</span></a>`;
+  return `<div class="archive-project-entry"><a class="archive-item" href="project.html?id=${encodeURIComponent(project.id)}"><div><h3>${escapeHtml(project.name)}</h3><p>${escapeHtml(project.goal || '')}</p></div><span class="archive-date">${dateLabel(project.updated_at)} · ${complete ? '모든 작업 완료' : '보관됨'} →</span></a><button type="button" class="button button-ghost button-small" data-delete-project="${project.id}" aria-label="${escapeHtml(project.name)} 프로젝트 삭제">삭제</button></div>`;
 }).join('');
 const taskRows = tasks.map(task => {
   const project = state.projects.find(project => project.id === task.project_id);
@@ -21,3 +23,4 @@ const taskRows = tasks.map(task => {
 document.querySelector('#archive-list').innerHTML = `
   <section class="archive-group"><div class="section-heading"><h2>완료·보관한 프로젝트</h2><span class="archive-count">${projects.length}개</span></div>${projectRows || '<p class="archive-empty">모든 작업을 완료한 프로젝트가 여기에 표시됩니다.</p>'}</section>
   <section class="archive-group"><div class="section-heading"><h2>완료한 작업</h2><span class="archive-count">${tasks.length}개</span></div>${taskRows || '<p class="archive-empty">작업의 완료 체크박스를 선택하면 여기에 표시됩니다.</p>'}</section>`;
+

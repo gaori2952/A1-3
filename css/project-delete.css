@@ -1,0 +1,20 @@
+.button-danger{background:var(--danger);color:#fff}
+.button-danger:hover{background:#923737}
+.project-delete-name{font-weight:700;overflow-wrap:anywhere}
+.project-delete-description{color:var(--text-muted);font-size:13px;line-height:1.7}
+.project-delete-modal .form-actions{flex-wrap:wrap}
+.project-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;border-bottom:1px solid var(--border);background:var(--surface)}
+.project-entry:last-child{border-bottom:0}
+.project-entry .project-card{border-bottom:0}
+.project-entry>button{margin:0 16px 0 0}
+.archive-project-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;border-bottom:1px solid var(--border)}
+.archive-project-entry:last-child{border-bottom:0}
+body[data-page="archive"] .archive-project-entry .archive-item{border-bottom:0}
+.archive-project-entry>button{margin:0 16px 0 0}
+.project-progress .project-delete-trigger{display:block;margin:18px 0 0 auto}
+@media(max-width:600px){
+ .project-entry,.archive-project-entry{grid-template-columns:minmax(0,1fr)}
+ .project-entry>button,.archive-project-entry>button{justify-self:end;margin:0 16px 16px}
+ .project-progress .project-delete-trigger{margin-left:0}
+}
+

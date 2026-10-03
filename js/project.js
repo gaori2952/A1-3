@@ -1,12 +1,14 @@
+import { wireProjectDeletion } from './projectDeleteUI.js?v=1';
 import { getState, saveState, requireSession, projectProgress, id, wireLogout, escapeHtml } from './supabaseClient.js?v=3';
 
 const session = requireSession();
 if (!session) throw new Error('No session');
 wireLogout();
+wireProjectDeletion(session);
 const state = getState();
 const projectId = new URLSearchParams(location.search).get('id');
 const project = state.projects.find(item => item.id === projectId && item.user_id === session.id);
-if (!project) location.href = 'index.html';
+if (!project) { location.href = 'index.html'; throw new Error('Project not found'); }
 const header = document.querySelector('#project-header');
 const taskList = document.querySelector('#task-list');
 const issueList = document.querySelector('#issue-list');
@@ -16,7 +18,7 @@ function render() {
   const tasks = state.tasks.filter(task => task.project_id === projectId);
   const issues = state.issues.filter(issue => issue.project_id === projectId);
   const progress = projectProgress(projectId, state);
-  header.innerHTML = `<div><p class="eyebrow">${(project.project_type || 'project').toUpperCase()}</p><h1>${escapeHtml(project.name)}</h1><p class="project-goal">${escapeHtml(project.goal)}</p>${project.due_date ? `<p class="project-due">마감일 ${project.due_date}</p>` : ''}</div><div class="project-progress"><strong>${progress}%</strong><span>${tasks.filter(task => task.completed).length} / ${tasks.length}개 작업 완료</span><div class="progress-track"><div class="progress-bar" style="width:${progress}%"></div></div></div>`;
+  header.innerHTML = `<div><p class="eyebrow">${(project.project_type || 'project').toUpperCase()}</p><h1>${escapeHtml(project.name)}</h1><p class="project-goal">${escapeHtml(project.goal)}</p>${project.due_date ? `<p class="project-due">마감일 ${project.due_date}</p>` : ''}</div><div class="project-progress"><strong>${progress}%</strong><span>${tasks.filter(task => task.completed).length} / ${tasks.length}개 작업 완료</span><div class="progress-track"><div class="progress-bar" style="width:${progress}%"></div></div><button type="button" class="button button-ghost button-small project-delete-trigger" data-delete-project="${project.id}">프로젝트 삭제</button></div>`;
   const next = tasks.filter(task => !task.completed).sort((a, b) => ({ high: 0, medium: 1, low: 2 }[a.priority] - { high: 0, medium: 1, low: 2 }[b.priority])).slice(0, 3);
   document.querySelector('#next-actions').innerHTML = `<div class="section-heading"><div><p class="eyebrow">NEXT ACTIONS</p><h2>다음에 할 일</h2></div></div>${next.length ? next.map(task => `<div class="next-action-row"><span class="calendar-dot ${task.priority}"></span><strong>${escapeHtml(task.title)}</strong><span>${task.planned_date || '날짜 미정'}</span></div>`).join('') : '<p class="muted">모든 작업을 완료했습니다.</p>'}`;
   taskList.innerHTML = tasks.length ? tasks.map(task => `<div class="task-item"><input class="task-check" type="checkbox" data-task="${task.id}" ${task.completed ? 'checked' : ''}><div class="task-copy"><span class="task-title ${task.completed ? 'done' : ''}">${escapeHtml(task.title)}</span><small>${task.planned_date ? `예정 ${task.planned_date}` : '일정 미정'}</small></div><span class="priority ${task.priority}">${labels[task.priority]}</span><button class="item-delete" data-delete-task="${task.id}" aria-label="작업 삭제">×</button></div>`).join('') : '<p class="muted">아직 작업이 없습니다. Quick Add로 첫 단계를 추가하세요.</p>';
