@@ -127,3 +127,12 @@ body[data-page="archive"] .archive-item h3{font-size:15px;font-weight:400}
 @media(prefers-reduced-motion:reduce){.reveal{animation:none}}
 
 @media(max-width:800px){:root{--sidebar:0px}}
+
+/* Keep unscheduled work beside the calendar. */
+.today-pane .unscheduled{display:block;margin:24px 0 0;padding:20px 0 0;border-top:1px solid var(--border);background:transparent;border-radius:0}
+.unscheduled h3{font-size:15px;font-weight:400;color:var(--text);margin:0 0 12px}
+#unscheduled-list,#no-deadline-list{display:flex;flex-direction:column;gap:6px}
+.today-pane .loose-task{text-align:left;white-space:normal;padding:9px 10px;line-height:1.5}
+.scheduled-add{display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:16px 0;border-bottom:1px solid var(--border)}
+.scheduled-add input{width:100%;min-width:0}.schedule-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.scheduled-add>.button{align-self:flex-end}.scheduled-add .form-error:empty{display:none}
+@media(max-width:600px){.schedule-fields{grid-template-columns:1fr 1fr}}
