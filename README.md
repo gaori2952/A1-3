@@ -28,13 +28,13 @@
 2026년 10월 3일 공개 배포 URL에서 촬영한 데모 화면입니다. API 키와 개인 과제는 포함하지 않았습니다.
 
 ### 데스크톱
-![데스크톱 대시보드](docs/screenshots/desktop-dashboard.jpg)
+![데스크톱 대시보드](docs/screenshots/projectflow-redesign-desktop.jpg)
 
 ### 모바일
 <details>
 <summary>390px 모바일 전체 화면</summary>
 
-<img src="docs/screenshots/mobile-dashboard.jpg" alt="모바일 대시보드 전체 화면" width="320">
+<img src="docs/screenshots/projectflow-redesign-mobile.jpg" alt="모바일 대시보드 전체 화면" width="320">
 
 </details>
 
