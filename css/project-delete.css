@@ -19,3 +19,28 @@ body[data-page="archive"] .archive-project-entry .archive-item{border-bottom:0}
  .project-progress .project-delete-trigger{margin-left:0}
 }
 
+
+/* Destructive action dialog */
+body .project-delete-modal{width:min(440px,calc(100% - 32px));border-radius:20px;box-shadow:0 24px 80px rgba(20,28,40,.22)}
+body .project-delete-modal::backdrop{background:rgba(24,32,44,.44);backdrop-filter:blur(4px)}
+body .project-delete-modal form{padding:30px;border:0;border-radius:20px}
+.delete-dialog-icon{display:grid;place-items:center;width:48px;height:48px;margin-bottom:20px;background:#fbeeed;border:1px solid #f5dfdc;border-radius:14px;color:#bc5049}
+.delete-dialog-icon svg{width:24px;height:24px}
+body .project-delete-modal h2{margin:0 0 10px;font-size:23px;line-height:1.4;letter-spacing:-.7px}
+body .project-delete-modal .project-delete-description{margin:0;font-size:13px;line-height:1.7;color:var(--text-muted)}
+.delete-project-summary{margin-top:24px;padding:18px;background:#f6f7f9;border:1px solid #e8ebef;border-radius:12px}
+.delete-summary-label{color:var(--text-muted);font-size:11px;font-weight:600}
+body .project-delete-modal .project-delete-name{margin:7px 0 16px;font-size:16px;line-height:1.5;font-weight:700;overflow-wrap:anywhere}
+.delete-summary-counts{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #e2e6eb;padding-top:13px;gap:16px;font-size:12px;color:var(--text-muted)}
+.delete-summary-counts>span{display:flex;justify-content:space-between;gap:8px}
+.delete-summary-counts>span+span{border-left:1px solid #e2e6eb;padding-left:16px}
+.delete-summary-counts strong{font-weight:700;color:var(--text)}
+.delete-permanent-note{margin:16px 0 0;color:#a35a55;font-size:12px;line-height:1.6}
+body .project-delete-modal .form-error:empty{display:none}
+body .project-delete-modal .form-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:26px}
+body .project-delete-modal .button{min-height:44px;border-radius:10px;font-size:13px}
+body .project-delete-modal .button-ghost{background:#fff;border-color:#dfe3e8;color:#525b66}
+body .project-delete-modal .button-danger{background:#b94e47;border-color:#b94e47;color:#fff}
+body .project-delete-modal .button-danger:hover{background:#a3423c;border-color:#a3423c}
+body .project-delete-modal .button:focus-visible{outline:2px solid #7e8da6;outline-offset:3px}
+@media(max-width:600px){body .project-delete-modal form{padding:24px}body .project-delete-modal h2{font-size:21px}}
