@@ -1,4 +1,4 @@
-import { getState, requireSession, wireLogout } from './supabaseClient.js?v=2';
+import { getState, requireSession, wireLogout } from './supabaseClient.js?v=8';
 const session = requireSession();
 if (session) {
   wireLogout();
@@ -15,16 +15,16 @@ function element(tag, text, className) {
   return node;
 }
 function renderAnalysis(result) {
-  const labels = { GOOD: '좋음', WATCH: '주의 필요', 'IN MOTION': '진행 중' };
-  const priorities = { HIGH: '높음', MEDIUM: '보통', LOW: '낮음' };
+  const labels = { GOOD: 'Good', WATCH: 'Watch', 'IN MOTION': 'In motion' };
+  const priorities = { HIGH: 'High', MEDIUM: 'Medium', LOW: 'Low' };
   const container = document.querySelector('#analysis-result');
   container.replaceChildren();
   const summary = element('article', undefined, 'analysis-card full');
-  summary.append(element('span', '프로젝트 상태 · ' + labels[result.status], 'label'), element('h2', '현재 상황을 정리하면'), element('p', result.summary));
+  summary.append(element('span', 'PROJECT STATUS · ' + labels[result.status], 'label'), element('h2', 'Summary'), element('p', result.summary));
   container.append(summary);
   for (const [title, label, items, risk] of [
-    ['이것부터 해보세요', '다음 단계', result.next_steps, false],
-    ['주의해서 살펴볼 것', '위험 요소', result.risks, true]
+    ['Next steps', 'NEXT STEPS', result.next_steps, false],
+    ['Risks', 'RISKS', result.risks, true]
   ]) {
     const card = element('article', undefined, 'analysis-card');
     card.append(element('span', label, 'label'), element('h2', title));
@@ -34,10 +34,10 @@ function renderAnalysis(result) {
       const heading = element('strong');
       const priority = risk ? item.severity : item.priority;
       heading.append(element('span', priorities[priority], (risk ? 'severity ' : 'priority ') + priority.toLowerCase()), document.createTextNode(' · ' + item.title));
-      row.append(heading, element('span', risk ? item.description + '\n\n추천 행동: ' + item.action : item.reason));
+      row.append(heading, element('span', risk ? item.description + '\n\nSuggested action: ' + item.action : item.reason));
       list.append(row);
     }
-    if (!items.length) list.append(element('li', risk ? '제공된 정보에서 특별한 위험을 찾지 못했습니다.' : '현재 제안할 다음 작업이 없습니다.'));
+    if (!items.length) list.append(element('li', risk ? 'No specific risks identified.' : 'No next steps suggested.'));
     card.append(list);
     container.append(card);
   }
@@ -64,16 +64,16 @@ function initialize(project, projectId, state) {
   button.addEventListener('click', async () => {
     if (busy) return;
     const question = document.querySelector('#analysis-question').value.trim();
-    if (!question) { status.textContent = '질문을 입력해주세요.'; return; }
-    if (Date.now() < nextAllowedAt) { status.textContent = '연속 요청을 줄이기 위해 잠시 기다린 뒤 다시 시도해주세요.'; return; }
+    if (!question) { status.textContent = 'Enter a question.'; return; }
+    if (Date.now() < nextAllowedAt) { status.textContent = 'Please wait a few seconds before trying again.'; return; }
     busy = true;
     button.disabled = true;
-    button.textContent = '분석 중...';
+    button.textContent = 'Analyzing…';
     result.classList.add('hidden');
-    status.textContent = '프로젝트를 분석하고 있습니다...';
+    status.textContent = 'Analyzing your project…';
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 55000);
-    const delay = setTimeout(() => { status.textContent = 'AI가 답변을 준비 중입니다. 조금만 기다려주세요.'; }, 10000);
+    const delay = setTimeout(() => { status.textContent = 'Still preparing the response…'; }, 10000);
     try {
       const response = await fetch('/api/analyze', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
@@ -85,19 +85,19 @@ function initialize(project, projectId, state) {
         })
       });
       const payload = await response.json().catch(() => null);
-      if (!response.ok || !payload?.success) throw new Error(payload?.message || 'AI 요청에 실패했습니다. 잠시 후 다시 시도해주세요.');
-      if (!validAnalysis(payload.analysis) || payload.provider !== 'openai-compatible') throw new Error('AI 응답 형식이 올바르지 않습니다. 다시 시도해주세요.');
+      if (!response.ok || !payload?.success) throw new Error('AI request failed. Try again shortly.');
+      if (!validAnalysis(payload.analysis) || payload.provider !== 'openai-compatible') throw new Error('The AI response was invalid. Please try again.');
       renderAnalysis(payload.analysis);
-      status.textContent = 'AI 분석이 완료됐습니다. 제안 내용을 확인한 뒤 작업에 반영하세요.';
+      status.textContent = 'Analysis ready. Review the suggestions.';
     } catch (error) {
-      status.textContent = error.name === 'AbortError' ? '응답 시간이 초과됐습니다. 잠시 후 다시 시도해주세요.' : (error instanceof TypeError ? '네트워크 연결을 확인하고 다시 시도해주세요.' : error.message);
+      status.textContent = error.name === 'AbortError' ? 'The request timed out. Try again shortly.' : (error instanceof TypeError ? 'Check your network and try again.' : error.message);
     } finally {
       clearTimeout(timeout);
       clearTimeout(delay);
       nextAllowedAt = Date.now() + 5000;
       busy = false;
       button.disabled = false;
-      button.textContent = '다시 분석하기 →';
+      button.textContent = 'Analyze again →';
     }
   });
 }
