@@ -53,3 +53,18 @@ body button[data-delete-project]:focus-visible{outline:2px solid #b94e47;outline
 body .project-entry>button[data-delete-project],body .archive-project-entry>button[data-delete-project]{margin-right:18px}
 body .project-progress button[data-delete-project]{margin-top:16px;margin-left:auto}
 @media(max-width:600px){body .project-progress button[data-delete-project]{margin-left:0}}
+
+/* Give the row action its own balanced space inside the card. */
+body .project-entry{grid-template-columns:minmax(0,1fr) 112px;border:1px solid var(--border);background:var(--surface)}
+body .project-entry:last-child{border-bottom:1px solid var(--border)}
+body .project-entry .project-card{border:0;background:transparent;min-width:0}
+body .project-entry>button[data-delete-project]{width:80px;min-height:40px;margin:0;justify-self:center;position:relative}
+body .project-entry>button[data-delete-project]::after{content:"";position:absolute;left:-16px;top:6px;bottom:6px;width:1px;background:var(--border)}
+body .archive-project-entry{grid-template-columns:minmax(0,1fr) 112px}
+body .archive-project-entry>button[data-delete-project]{width:80px;min-height:40px;margin:0;justify-self:center;position:relative}
+body .archive-project-entry>button[data-delete-project]::after{content:"";position:absolute;left:-16px;top:6px;bottom:6px;width:1px;background:var(--border)}
+@media(max-width:600px){
+ body .project-entry,body .archive-project-entry{grid-template-columns:minmax(0,1fr)}
+ body .project-entry>button[data-delete-project],body .archive-project-entry>button[data-delete-project]{justify-self:end;width:auto;min-width:80px;margin:0 16px 14px}
+ body .project-entry>button[data-delete-project]::after,body .archive-project-entry>button[data-delete-project]::after{display:none}
+}
