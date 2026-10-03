@@ -16,7 +16,7 @@ if (typeSelect) typeSelect.innerHTML = projectTypes.map(type => `<option value="
 
 function taskRow(task) {
 	const project = taskProject(task);
-	return `<div class="schedule-task"><input class="task-check" type="checkbox" data-dashboard-task="${task.id}" ${task.completed ? 'checked' : ''}><span class="calendar-dot topic-${project?.project_type || 'other'}"></span><div class="schedule-task-copy"><strong>${escapeHtml(task.planned_date)} · ${task.duration_minutes}분</strong><span>${escapeHtml(task.title)}</span><span>${escapeHtml(project?.name || '')}</span></div><span class="priority ${task.priority}">${priorityLabels[task.priority]}</span></div>`;
+	return `<div class="schedule-task"><input class="task-check" type="checkbox" data-dashboard-task="${task.id}" ${task.completed ? 'checked' : ''}><span class="calendar-dot topic-${project?.project_type || 'other'}"></span><div class="schedule-task-copy"><strong>${escapeHtml(task.title)}</strong>${Number.isInteger(task.duration_minutes) ? `<span>${task.duration_minutes}분</span>` : ""}<span>${escapeHtml(project?.name || '')}</span></div><span class="priority ${task.priority}">${priorityLabels[task.priority]}</span></div>`;
 }
 
 function renderToday() {
