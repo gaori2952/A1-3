@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { occursOn, dayEntries, parseTimetable, reviewPlan, monthDays, validateEvent } from '../js/semesterStore.js';
+import { occursOn, dayEntries, parseTimetable, reviewPlan, monthDays, validateEvent, todaySummary } from '../js/semesterStore.js';
 const course={id:'c',user_id:'u',title:'Course',kind:'class',repeat:'weekly',weekday:1,first_date:'2026-09-01',last_date:'2026-12-20',start_time:'09:00',end_time:'10:15'};
 const state={calendar_events:[course],projects:[{id:'p',user_id:'u'}],tasks:[]};
 test('semester bounds, weekdays, exceptions and pause are respected',()=>{
@@ -37,6 +37,45 @@ test('import validates all rows, personal blocks and semester lengths',()=>{
   assert.throws(()=>validateEvent({...course,first_date:'2026-02-30'}),/dates/);
   assert.throws(()=>reviewPlan(state,'u',course,'2026-10-04',{offsets:[-1]}),/intervals/);
 });
-test('month grids start Monday and include month boundaries',()=>{
-  const days=monthDays('2026-10-01');assert.equal(days.length,42);assert.equal(days[0],'2026-09-28');assert.equal(days[41],'2026-11-08');
+test('month grids start Sunday and include month boundaries',()=>{
+  const days=monthDays('2026-10-01');assert.equal(days.length,42);assert.equal(days[0],'2026-09-27');assert.equal(days[41],'2026-11-07');
+});
+
+test('Sunday-start grid keeps a Sunday month aligned without an extra week',()=>{
+  assert.equal(monthDays('2026-02-15')[0],'2026-02-01');
+  assert.equal(monthDays('2027-01-15')[0],'2026-12-27');
+});
+test('Today includes planned or due tasks once, separates review and preserves ownership',()=>{
+  const task={user_id:'u',project_id:'p'};
+  const s={...state,tasks:[
+    {...task,id:'planned',planned_date:'2026-10-04',due_date:'2026-10-03'},
+    {...task,id:'due',planned_date:'2026-10-06',due_date:'2026-10-04'},
+    {...task,id:'review',planned_date:'2026-10-04',review_key:'r'},
+    {...task,id:'overdue',planned_date:'2026-10-02'},
+    {...task,id:'done',planned_date:'2026-10-04',completed:true},
+    {...task,id:'inbox'},
+    {...task,id:'future',planned_date:'2026-10-07'},
+    {...task,id:'foreign',user_id:'v',planned_date:'2026-10-04'},
+    {...task,id:'orphan',project_id:'missing',planned_date:'2026-10-04'}
+  ]};
+  const before=JSON.stringify(s), result=todaySummary(s,'u','2026-10-04');
+  assert.deepEqual(result.tasks.map(t=>t.id),['planned','due']);
+  assert.deepEqual(result.reviews.map(t=>t.id),['review']);
+  assert.deepEqual(result.overdue.map(t=>t.id),['overdue']);
+  assert.deepEqual(result.completed.map(t=>t.id),['done']);
+  assert.equal(result.next.date,'2026-10-05');
+  assert.equal(JSON.stringify(s),before);
+});
+test('Today shows recurring sessions on their weekdays and reopens completed tasks',()=>{
+  const s={...state,calendar_events:[{...course,kind:'study',completed_dates:['2026-10-05']}],tasks:[{id:'t',user_id:'u',project_id:'p',planned_date:'2026-10-05',start_time:'23:30',duration_minutes:30,completed:true}]};
+  let result=todaySummary(s,'u','2026-10-05');
+  assert.equal(result.schedule.length,2);
+  assert.equal(result.schedule[1].end_time,'24:00');
+  assert.equal(result.completed.length,2);
+  assert.equal(result.tasks.length,0);
+  s.tasks[0].completed=false;
+  result=todaySummary(s,'u','2026-10-05');
+  assert.equal(result.tasks.length,1);
+  assert.equal(result.completed.length,1);
+  assert.equal(todaySummary(s,'u','2026-10-12').schedule[0].completed,false);
 });

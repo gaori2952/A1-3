@@ -1,7 +1,7 @@
 import { initializeNotes } from './notes.js?v=1';
 import { wireProjectDeletion } from './projectDeleteUI.js?v=2';
-import { getState, saveState, requireSession, projectProgress, id, todayKey, getProjectTypes, wireLogout, escapeHtml } from './supabaseClient.js?v=8';
-import { initializeSemesterPlanner } from './semesterPlanner.js?v=1';
+import { getState, saveState, requireSession, projectProgress, id, todayKey, getProjectTypes, wireLogout, escapeHtml } from './supabaseClient.js?v=9';
+import { initializeSemesterPlanner } from './semesterPlanner.js?v=2';
 const session=requireSession();if(!session)throw new Error('No session');
 wireLogout();wireProjectDeletion(session);
 let state=getState();const today=todayKey();
@@ -11,13 +11,16 @@ const projectById=pid=>state.projects.find(p=>p.id===pid&&p.user_id===session.id
 const taskProject=t=>projectById(t.project_id);
 const typeSelect=document.querySelector('select[name="project_type"]');
 if(typeSelect)typeSelect.innerHTML=projectTypes.map(t=>'<option value="'+t.key+'">'+escapeHtml(t.label)+'</option>').join('');
-const view=new URLSearchParams(location.search).get('view')||'today';
-document.body.classList.toggle('is-planner',view==='today');
-document.querySelector('#workspace-view').classList.toggle('hidden',view!=='today');
+const requestedView=new URLSearchParams(location.search).get('view');
+const view=['today','projects','notes','ai'].includes(requestedView)?requestedView:'planner';
+const calendarView=view==='planner'||view==='today';
+document.body.classList.toggle('is-planner',calendarView);
+document.body.classList.toggle('is-today-view',view==='today');
+document.querySelector('#workspace-view').classList.toggle('hidden',!calendarView);
 document.querySelector('#projects-section').classList.toggle('hidden',view!=='projects');
 document.querySelector('#ai-view').classList.toggle('hidden',view!=='ai');
 document.querySelector('#notes-view').classList.toggle('hidden',view!=='notes');document.querySelector('.planner-header-actions').classList.toggle('hidden',view==='notes');if(view==='notes')initializeNotes(session.id);
-document.querySelector('#view-title').textContent=view==='notes'?'Notes':view==='projects'?'Projects':view==='ai'?'AI':'Planner';
+document.querySelector('#view-title').textContent=view==='notes'?'Notes':view==='projects'?'Projects':view==='ai'?'AI':view==='today'?'Today':'Planner';
 document.title='ProjectFlow | '+document.querySelector('#view-title').textContent;
 document.querySelector('#planner-date').textContent=new Date(today+'T12:00:00').toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
 const ownedTasks=()=>state.tasks.filter(t=>t.user_id===session.id&&taskProject(t));
@@ -25,7 +28,7 @@ function pastel(p){const index=state.projects.filter(p=>p.user_id===session.id).
 function renderProjects(){const projects=state.projects.filter(p=>p.user_id===session.id&&p.status!=='archived').sort((a,b)=>(a.due_date||'9999').localeCompare(b.due_date||'9999'));document.querySelector('#active-count').textContent=projects.length;document.querySelector('#project-grid').innerHTML=projects.map(p=>{const ts=ownedTasks().filter(t=>t.project_id===p.id);return '<article class="project-list-row"><a href="project.html?id='+p.id+'"><span class="project-color '+pastel(p)+'"></span><div><h3>'+escapeHtml(p.name)+'</h3><small>'+(p.due_date?'Due '+p.due_date:'No deadline')+'</small></div><span class="project-task-count">'+ts.filter(t=>t.completed).length+' / '+ts.length+'</span><span class="project-percent">'+projectProgress(p.id,state)+'%</span></a><button class="button button-ghost button-small" data-delete-project="'+p.id+'" aria-label="'+escapeHtml(p.name)+' Delete project">Delete</button></article>';}).join('');document.querySelector('#empty-state').classList.toggle('hidden',projects.length>0);document.querySelector('#project-grid').classList.toggle('hidden',!projects.length);document.querySelector('#ai-project-list').innerHTML=projects.length?projects.map(p=>'<a class="ai-project-row" href="insights.html?id='+p.id+'"><span>'+escapeHtml(p.name)+'</span><small>Insights →</small></a>').join(''):'<p class="planner-empty">Create a project first.</p>';}
 
 function render(){state=getState();renderProjects();}
-initializeSemesterPlanner(session.id,render);
+initializeSemesterPlanner(session.id,render,{view});
 render();
 const projectModal = document.querySelector('#project-modal');
 document.querySelectorAll('[data-open-project]').forEach(button => button.addEventListener('click', () => projectModal.showModal()));

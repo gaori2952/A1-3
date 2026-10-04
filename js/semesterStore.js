@@ -25,7 +25,27 @@ export function dayEntries(state, userId, day) {
   const tasks=(state.tasks||[]).filter(t=>t.user_id===userId && projects.some(p=>p.id===t.project_id) && (t.planned_date||t.due_date)===day).map(t=>({...t,date:day,source:'task',kind:t.review_key?'review':'task',color:t.color??4,location:projects.find(p=>p.id===t.project_id)?.name||'',end_time:t.start_time?clock(Math.min(1440,minutes(t.start_time)+(t.duration_minutes||60))):''}));
   return [...events,...tasks].sort((a,b)=>(a.start_time||'99:99').localeCompare(b.start_time||'99:99'));
 }
-export function monthDays(day) { const first=day.slice(0,7)+'-01'; const offset=(new Date(first+'T12:00:00').getDay()+6)%7; return Array.from({length:42},(_,i)=>shiftDate(first,i-offset)); }
+export function monthDays(day) { const first=day.slice(0,7)+'-01'; const offset=new Date(first+'T12:00:00').getDay(); return Array.from({length:42},(_,i)=>shiftDate(first,i-offset)); }
+
+export function todaySummary(state, userId, today) {
+  const projects=(state.projects||[]).filter(p=>p.user_id===userId);
+  const owned=(state.tasks||[]).filter(t=>t.user_id===userId&&projects.some(p=>p.id===t.project_id));
+  const asEntry=t=>({...t,source:'task',kind:t.review_key?'review':'task',date:t.planned_date||t.due_date||today,location:projects.find(p=>p.id===t.project_id)?.name||''});
+  const relevant=owned.filter(t=>t.planned_date===today||t.due_date===today);
+  const pending=relevant.filter(t=>!t.completed).map(asEntry).sort((a,b)=>(a.start_time||'99:99').localeCompare(b.start_time||'99:99'));
+  const entries=dayEntries(state,userId,today);
+  const overdue=owned.filter(t=>!t.completed&&!relevant.some(r=>r.id===t.id)&&((t.due_date&&t.due_date<today)||(t.planned_date&&t.planned_date<today))).map(asEntry).sort((a,b)=>a.date.localeCompare(b.date));
+  let next=null;
+  for(let offset=1;offset<=7&&!next;offset++) next=dayEntries(state,userId,shiftDate(today,offset)).find(e=>e.start_time&&!e.completed)||null;
+  return {
+    schedule:entries.filter(e=>e.start_time),
+    tasks:pending.filter(e=>e.kind==='task'),
+    reviews:pending.filter(e=>e.kind==='review'),
+    overdue,
+    completed:[...relevant.filter(t=>t.completed).map(asEntry),...entries.filter(e=>e.source==='event'&&e.completed)],
+    next
+  };
+}
 export function parseTimetable(text, firstDate, lastDate) {
   if (!text.trim()) throw new Error('Paste one event per line.');
   return text.trim().split('\n').filter(line=>line.trim()).map((line,index)=>{

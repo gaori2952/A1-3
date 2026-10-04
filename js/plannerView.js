@@ -1,6 +1,6 @@
 export function weekDates(today, offset = 0) {
   const date = new Date(today + 'T12:00:00');
-  date.setDate(date.getDate() - (date.getDay() + 6) % 7 + offset * 7);
+  date.setDate(date.getDate() - date.getDay() + offset * 7);
   return Array.from({length:7},(_,i)=>{ const d=new Date(date);d.setDate(d.getDate()+i);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'); });
 }
 export function timedEvents(tasks, day) {

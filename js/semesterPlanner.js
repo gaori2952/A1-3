@@ -1,9 +1,9 @@
-import { getState, saveState, id, todayKey, escapeHtml as esc } from './supabaseClient.js?v=8';
-import { weekDates, timedEvents } from './plannerView.js';
-import { weekdays, dateKey, shiftDate, minutes, clock, validateEvent, occursOn, dayEntries, monthDays, parseTimetable, reviewPlan } from './semesterStore.js';
+import { getState, saveState, id, todayKey, escapeHtml as esc } from './supabaseClient.js?v=9';
+import { weekDates, timedEvents } from './plannerView.js?v=2';
+import { weekdays, dateKey, shiftDate, minutes, clock, validateEvent, occursOn, dayEntries, monthDays, parseTimetable, reviewPlan, todaySummary } from './semesterStore.js?v=2';
 import { writeNote } from './notesStore.js';
 
-export function initializeSemesterPlanner(userId, onChange = () => {}) {
+export function initializeSemesterPlanner(userId, onChange = () => {}, {view='planner'} = {}) {
   const root=document.querySelector('#workspace-view'), today=todayKey();
   let selected=today, month=today.slice(0,7)+'-01', mode=matchMedia('(max-width:800px)').matches?'month':'week', query='', kind='all', current=null, editing=null, reviews=[];
   const label=(day,options={month:'short',day:'numeric'})=>new Date(day+'T12:00:00').toLocaleDateString('en-US',options);
@@ -14,10 +14,11 @@ export function initializeSemesterPlanner(userId, onChange = () => {}) {
   const ownedTasks=()=>{const s=getState();return s.tasks.filter(t=>t.user_id===userId&&s.projects.some(p=>p.id===t.project_id&&p.user_id===userId));};
   const button=(text,attrs='')=>`<button type="button" class="cal-button" ${attrs}>${text}</button>`;
   root.classList.add('semester-workspace');
+  root.classList.toggle('is-today-workspace',view==='today');
   root.innerHTML=`<div class="semester-toolbar"><div class="cal-segments" aria-label="Calendar view">${['week','month','agenda'].map(m=>button(m[0].toUpperCase()+m.slice(1),`data-mode="${m}" aria-pressed="${mode===m}"`)).join('')}</div><div class="calendar-actions">${button('Semester','data-action="semester"')}${button('＋ Event','data-action="new-event"')}</div></div>
     <div class="semester-layout"><aside class="calendar-sidebar"><section class="mini-month" aria-label="Date picker"></section><section class="selected-day"><div class="calendar-section-heading"><h2 id="selected-day-label"></h2>${button('＋','data-action="new-task" aria-label="Add task on selected day"')}</div><div id="selected-day-items"></div></section><details class="task-inbox" id="calendar-overdue"><summary>Overdue <span id="calendar-overdue-count"></span></summary><div id="calendar-overdue-list"></div></details><details class="task-inbox"><summary>Inbox <span id="inbox-count"></span></summary><div id="inbox-list"></div></details></aside>
     <section class="semester-main"><header class="calendar-heading"><div><p id="calendar-subtitle"></p><h2 id="calendar-period"></h2></div><div class="calendar-paging">${button('‹','data-action="previous" aria-label="Previous period"')}${button('Today','data-action="today"')}${button('›','data-action="next" aria-label="Next period"')}</div></header>
-      <div class="calendar-filter"><div class="calendar-kinds">${[['all','All'],['class','Classes'],['review','Review'],['task','Tasks'],['study','Study']].map(([k,text])=>button(text,`data-kind="${k}" aria-pressed="${k==='all'}"`)).join('')}</div><input type="search" id="calendar-search" aria-label="Search calendar" placeholder="Search"></div><div id="semester-grid"></div><footer class="calendar-foot"><span id="semester-caption"></span>${button('Import timetable','data-action="import"')}</footer></section></div>`;
+      <div class="calendar-filter"><div class="calendar-kinds">${[['all','All'],['class','Classes'],['review','Review'],['task','Tasks'],['study','Study']].map(([k,text])=>button(text,`data-kind="${k}" aria-pressed="${k==='all'}"`)).join('')}</div><input type="search" id="calendar-search" aria-label="Search calendar" placeholder="Search"></div><div id="semester-grid"></div><footer class="calendar-foot"><span id="semester-caption"></span>${button('Import timetable','data-action="import"')}</footer></section></div><div id="today-overview" ${view==='today'?'':'hidden'}></div>`;
   document.body.insertAdjacentHTML('beforeend',`
     <dialog id="semester-event" class="modal calendar-modal"><form id="semester-event-form"><header><p class="eyebrow">Calendar</p><h2 id="event-editor-title">New event</h2></header><label>Name<input name="title" required maxlength="120"></label><div class="schedule-fields"><label>Type<select name="kind"><option value="class">Class</option><option value="study">Study</option><option value="event">Personal</option></select></label><label>Location<input name="location" maxlength="80" placeholder="Room or link"></label><label>Date<input name="first_date" type="date" required></label><label>Repeat<select name="repeat"><option value="none">Once</option><option value="weekly">Weekly</option><option value="daily">Daily</option></select></label><label>Start<input name="start_time" type="time" required></label><label>End<input name="end_time" type="time" required></label><label class="recurrence-field">Weekday<select name="weekday">${weekdays.map((d,i)=>`<option value="${i}">${d}</option>`).join('')}</select></label><label class="recurrence-field">Until<input name="last_date" type="date"></label></div><fieldset class="calendar-swatches"><legend>Color</legend>${['Rose','Butter','Mint','Sky','Lilac','Peach'].map((text,i)=>`<label class="tone-${i}" title="${text}"><input type="radio" name="color" value="${i}" ${i===0?'checked':''} aria-label="${text}"></label>`).join('')}</fieldset><p class="form-error" role="alert"></p><div class="form-actions">${button('Pause series','id="pause-series" hidden')}${button('Restore skipped dates','id="restore-skipped" hidden')}${button('Cancel','data-close') }<button class="button button-primary" type="submit">Save event</button></div></form></dialog>
     <dialog id="semester-settings" class="modal calendar-modal"><form id="semester-settings-form"><p class="eyebrow">Timetable</p><h2>Semester</h2><div class="schedule-fields"><label>Start date<input type="date" name="start" required></label><label>End date<input type="date" name="end" required></label></div><p class="calendar-hint">Applies to repeating classes. Study sessions and tasks keep their dates.</p><div id="semester-class-list"></div><p class="form-error" role="alert"></p><div class="form-actions">${button('Cancel','data-close')}<button class="button button-primary" type="submit">Save semester</button></div></form></dialog>
@@ -33,21 +34,37 @@ export function initializeSemesterPlanner(userId, onChange = () => {}) {
   document.querySelectorAll('.calendar-modal [data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
   function dayButton(day,large=false){const list=entries(day),active=day===selected;return `<button type="button" data-date="${day}" class="month-date ${active?'selected':''} ${day===today?'is-today':''} ${day.slice(0,7)!==month.slice(0,7)?'other-month':''}" aria-label="${label(day,{weekday:'long',month:'long',day:'numeric',year:'numeric'})}" aria-pressed="${active}"><span>${Number(day.slice(8))}</span>${large?`<div class="month-events">${list.slice(0,3).map(e=>`<small class="${color(e)} ${e.completed?'is-complete':''}">${esc(e.title)}</small>`).join('')}${list.length>3?`<em>+${list.length-3}</em>`:''}</div>`:`<i class="month-dot ${list.length?'has-events':''}"></i>`}</button>`;}
   function row(e){return `<div class="calendar-day-row ${e.completed?'is-complete':''}"><span class="calendar-row-time">${e.start_time||'Anytime'}</span><button type="button" class="calendar-item ${color(e)}" data-entry="${e.id}" data-source="${e.source}" data-on="${e.date}"><strong>${esc(e.title)}</strong><small>${esc(e.location||({class:'Class',review:'Review',task:'Task',study:'Study',event:'Personal'}[e.kind]))}</small></button>${e.kind!=='class'?`<button type="button" class="calendar-check" data-complete="${e.id}" data-source="${e.source}" data-on="${e.date}" aria-label="${e.completed?'Reopen':'Complete'} ${esc(e.title)}" aria-pressed="${Boolean(e.completed)}">${e.completed?'✓':'○'}</button>`:''}</div>`;}
+  function renderToday(){
+    const summary=todaySummary(getState(),userId,today);
+    const list=(items,empty)=>items.map(row).join('')||`<p class="calendar-empty">${empty}</p>`;
+    const next=summary.next;
+    const wasOpen=Object.fromEntries([...root.querySelectorAll('.today-disclosure')].map(el=>[el.id,el.open]));
+    $('#today-overview').innerHTML=`<div class="today-toolbar"><span>${summary.tasks.length+summary.reviews.length} to do</span><a class="cal-button" href="index.html">Open calendar ↗</a></div>
+      <div class="today-layout"><section class="today-panel today-schedule"><header class="today-section-heading"><h2>Schedule</h2>${button('＋ Event','data-action="new-event"')}</header>
+        <div class="today-schedule-list">${list(summary.schedule,'No events scheduled today.')}</div>
+        ${next?`<section class="today-next"><p>Coming up · ${label(next.date,{weekday:'short',month:'short',day:'numeric'})}</p>${row(next)}</section>`:''}</section>
+      <section class="today-panel today-checklist"><section><header class="today-section-heading"><h2>Tasks <span>${summary.tasks.length}</span></h2>${button('＋','data-action="new-task" aria-label="Add task today"')}</header>${list(summary.tasks,'All caught up.')}</section>
+        <section class="today-review"><header class="today-section-heading"><h2>Review <span>${summary.reviews.length}</span></h2></header>${list(summary.reviews,'No reviews due today.')}</section>
+        ${summary.overdue.length?`<details class="task-inbox today-disclosure" id="today-overdue" ${wasOpen['today-overdue']?'open':''}><summary>Overdue <span>${summary.overdue.length}</span></summary>${list(summary.overdue,'')}</details>`:''}
+        ${summary.completed.length?`<details class="task-inbox today-disclosure" id="today-completed" ${wasOpen['today-completed']?'open':''}><summary>Completed <span>${summary.completed.length}</span></summary>${list(summary.completed,'')}</details>`:''}
+      </section></div>`;
+  }
   function refresh(){
+    if(view==='today'){renderToday();return;}
     const days=weekDates(selected),s=semester();
-    $('.mini-month').innerHTML=`<header>${button('‹','data-month="-1" aria-label="Previous month"')}<h2>${label(month,{month:'long',year:'numeric'})}</h2>${button('›','data-month="1" aria-label="Next month"')}</header><div class="mini-weekdays">${['M','T','W','T','F','S','S'].map(d=>`<span>${d}</span>`).join('')}</div><div class="mini-days">${monthDays(month).map(d=>dayButton(d)).join('')}</div>`;
+    $('.mini-month').innerHTML=`<header>${button('‹','data-month="-1" aria-label="Previous month"')}<h2>${label(month,{month:'long',year:'numeric'})}</h2>${button('›','data-month="1" aria-label="Next month"')}</header><div class="mini-weekdays">${['S','M','T','W','T','F','S'].map(d=>`<span>${d}</span>`).join('')}</div><div class="mini-days">${monthDays(month).map(d=>dayButton(d)).join('')}</div>`;
     $('#selected-day-label').textContent=label(selected,{weekday:'short',month:'short',day:'numeric'});
     const list=entries(selected);$('#selected-day-items').innerHTML=list.map(row).join('')||'<p class="calendar-empty">A clear day.</p>';
     const late=ownedTasks().filter(t=>!t.completed&&((t.due_date&&t.due_date<today)||(t.planned_date&&t.planned_date<today)));$('#calendar-overdue').hidden=!late.length;$('#calendar-overdue-count').textContent=late.length;$('#calendar-overdue-list').innerHTML=late.map(t=>row({...t,source:'task',kind:'task',date:t.planned_date||t.due_date})).join('');
     const inbox=ownedTasks().filter(t=>!t.completed&&!t.planned_date&&(!query||t.title.toLocaleLowerCase().includes(query)));
     $('#inbox-count').textContent=inbox.length;$('#inbox-list').innerHTML=inbox.map(t=>row({...t,source:'task',kind:'task',date:selected})).join('')||'<p class="calendar-empty">All caught up.</p>';
-    $('#calendar-subtitle').textContent=mode==='week'?'Week '+weekNumber(selected):mode==='month'?'Monthly overview':'Daily list';
+    $('#calendar-subtitle').textContent=mode==='week'?'Weekly timetable':mode==='month'?'Monthly overview':'Daily list';
     $('#calendar-period').textContent=mode==='month'?label(month,{month:'long',year:'numeric'}):label(days[0])+' — '+label(days[6]);
     $('#semester-caption').textContent=label(s.start)+' — '+label(s.end)+' · '+s.end.slice(0,4);
     root.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));
     root.querySelectorAll('[data-kind]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.kind===kind)));
     const grid=$('#semester-grid'), previous=grid.querySelector('.semester-time-scroll'),top=previous?.scrollTop,left=previous?.scrollLeft;
-    if(mode==='month')grid.innerHTML=`<div class="full-month"><div class="month-weekdays">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<span>${d}</span>`).join('')}</div><div class="full-month-days">${monthDays(month).slice(0,monthDays(month)[35].slice(0,7)===month.slice(0,7)?42:35).map(d=>dayButton(d,true)).join('')}</div></div>`;
+    if(mode==='month')grid.innerHTML=`<div class="full-month"><div class="month-weekdays">${weekdays.map(d=>`<span>${d}</span>`).join('')}</div><div class="full-month-days">${monthDays(month).slice(0,monthDays(month)[35].slice(0,7)===month.slice(0,7)?42:35).map(d=>dayButton(d,true)).join('')}</div></div>`;
     else if(mode==='agenda')grid.innerHTML=`<div class="semester-agenda">${days.map(day=>`<section><h3><button data-date="${day}">${label(day,{weekday:'short',month:'short',day:'numeric'})}</button></h3>${entries(day).map(row).join('')||'<p class="calendar-empty">No events.</p>'}</section>`).join('')}</div>`;
     else{
       const events=days.map(day=>entries(day));
@@ -59,7 +76,6 @@ export function initializeSemesterPlanner(userId, onChange = () => {}) {
     }
     root.dataset.mode=mode;
   }
-  function weekNumber(day){const d=new Date(day+'T12:00:00');d.setDate(d.getDate()+3-(d.getDay()+6)%7);const first=new Date(d.getFullYear(),0,4);return 1+Math.round(((d-first)/86400000-3+(first.getDay()+6)%7)/7);}
   function selectDate(day){selected=day;month=day.slice(0,7)+'-01';refresh();}
   function moveMonth(amount){const d=new Date(month+'T12:00:00');d.setMonth(d.getMonth()+amount);month=dateKey(d);if(mode==='month')selected=month;refresh();}
   function findEntry(id,source,day){return source==='task'?ownedTasks().find(e=>e.id===id):dayEntries(getState(),userId,day).find(e=>e.id===id&&e.source==='event');}

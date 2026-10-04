@@ -10,3 +10,38 @@
 
 body.is-planner .topbar{display:none}body.is-planner .planner-shell{padding-top:24px}.selected-day{scroll-margin-top:18px}.calendar-modal .form-actions{flex-wrap:wrap}.semester-workspace [hidden]{display:none!important}
 .semester-block{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start}.semester-block.kind-event{background:#edf0f5}.semester-block strong{flex-shrink:0}.semester-block small{white-space:nowrap}
+
+/* The daily workspace shares the calendar editors and saved data. */
+.mobile-planner-brand{display:none}
+.is-today-view .planner-header-actions [data-open-project]{display:none}
+.is-today-workspace>.semester-toolbar,.is-today-workspace>.semester-layout{display:none}
+.today-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;min-height:35px}
+.today-toolbar>span{font-size:12px;color:#909bab}
+.today-toolbar a{text-decoration:none}
+.today-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:22px;align-items:start}
+.today-panel{background:#fff;border:1px solid #e1e5eb;border-radius:10px;padding:24px;min-width:0}
+.today-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:34px;margin-bottom:20px}
+.today-section-heading h2{font-size:18px;line-height:1.4;font-weight:400;letter-spacing:-.02em;margin:0}
+.today-section-heading h2 span{font-size:11px;color:#a0a7b1;margin-left:8px}
+.today-panel .calendar-day-row{padding:13px 0;gap:12px}
+.today-panel .calendar-row-time{width:46px;flex-basis:46px;font-size:11px}
+.today-panel .calendar-item{padding:6px 10px;border-left:0;background:#f7f8fa!important;border-radius:3px}
+.today-panel .calendar-item strong{font-size:14px}
+.today-panel .calendar-item small{font-size:11px;line-height:1.5}
+.today-panel .calendar-check{min-height:36px;min-width:32px}
+.today-schedule-list>.calendar-empty{padding:32px 0}
+.today-next,.today-review{border-top:1px solid #e9ebef;padding-top:22px;margin-top:26px}
+.today-next>p{font-size:11px;color:#929baa;margin:0 0 10px}
+.today-next .calendar-item{background:#f4f1f7!important}
+.today-review .calendar-item{background:#eef5f0!important}
+.today-disclosure .calendar-item{background:transparent!important}
+@media(max-width:800px){
+  .mobile-planner-brand{display:inline-block;font-size:15px;font-weight:500;letter-spacing:-.4px;color:#667286;text-decoration:none;margin-bottom:26px}
+  .today-layout{grid-template-columns:minmax(0,1fr);gap:16px}
+  .today-panel{padding:20px}
+  .today-toolbar{margin-bottom:14px}
+  .today-section-heading{margin-bottom:12px}
+  .today-schedule-list>.calendar-empty{padding:16px 0}
+  .today-next,.today-review{margin-top:20px;padding-top:18px}
+  .today-panel .calendar-day-row{gap:8px}
+}
