@@ -27,6 +27,7 @@ export function initializeSemesterPlanner(userId, onChange = () => {}, {view='pl
     <dialog id="calendar-review" class="modal calendar-modal"><form id="calendar-review-form"><p class="eyebrow">Spaced review</p><h2 id="review-title">Plan review</h2><label>Days after this session<input name="offsets" value="1, 3, 7" required></label><div class="schedule-fields"><label>Minutes per review<input type="number" name="duration" value="30" min="15" max="180" step="15" required></label><label>From<input type="time" name="from" value="09:00" required></label><label>Until<input type="time" name="until" value="22:00" required></label></div><div id="review-preview"></div><p class="form-error" role="alert"></p><div class="form-actions">${button('Cancel','data-close')}<button type="submit" class="button button-primary" id="review-submit">Find free time</button></div></form></dialog>
     <dialog id="calendar-task" class="modal calendar-modal"><form id="calendar-task-form"><p class="eyebrow">Task</p><h2 id="calendar-task-title">New task</h2><label>Name<input name="title" required maxlength="120"></label><label>Project<select name="project_id"></select></label><div class="schedule-fields"><label>Date<input name="date" type="date"></label><label>Start<input name="time" type="time"></label><label>Minutes<input name="duration" type="number" min="15" max="480" step="15" value="30" required></label><label>Deadline<input name="deadline" type="date"></label></div><p class="form-error" role="alert"></p><div class="form-actions">${button('Cancel','data-close')}<button type="submit" class="button button-primary">Save task</button></div></form></dialog>
     <div class="calendar-toast" role="status" aria-live="polite"></div>`);
+  document.body.insertAdjacentHTML('beforeend', '<dialog id="calendar-ai-schedule" class="modal calendar-modal"><p class="eyebrow">AI SCHEDULE</p><h2>Inbox schedule</h2><p class="calendar-hint">Review one recommended plan for existing tasks before adding it. Task names, priorities, and deadlines are sent to the configured AI provider.</p><p id="ai-schedule-status" class="calendar-hint" role="status" aria-live="polite"></p><div id="ai-schedule-preview"></div><div class="form-actions"><button type="button" class="button button-ghost" data-close>Cancel</button><button type="button" class="button button-primary" id="apply-ai-schedule">Apply schedule</button></div></dialog>');
   const $=selector=>document.querySelector(selector), formError=(form,message='')=>form.querySelector('.form-error').textContent=message;
   let toastTimer;
   function toast(message){$('.calendar-toast').textContent=message;$('.calendar-toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('.calendar-toast').classList.remove('visible'),2400);}
@@ -58,6 +59,8 @@ export function initializeSemesterPlanner(userId, onChange = () => {}, {view='pl
     const late=ownedTasks().filter(t=>!t.completed&&((t.due_date&&t.due_date<today)||(t.planned_date&&t.planned_date<today)));$('#calendar-overdue').hidden=!late.length;$('#calendar-overdue-count').textContent=late.length;$('#calendar-overdue-list').innerHTML=late.map(t=>row({...t,source:'task',kind:'task',date:t.planned_date||t.due_date})).join('');
     const inbox=ownedTasks().filter(t=>!t.completed&&!t.planned_date&&(!query||t.title.toLocaleLowerCase().includes(query)));
     $('#inbox-count').textContent=inbox.length;$('#inbox-list').innerHTML=inbox.map(t=>row({...t,source:'task',kind:'task',date:selected})).join('')||'<p class="calendar-empty">All caught up.</p>';
+    if(!$('#plan-inbox-ai')){const action=document.createElement('button'),status=document.createElement('p');action.type='button';action.className='cal-button';action.id='plan-inbox-ai';action.textContent='Plan inbox with AI';action.onclick=planInboxTasks;status.id='inbox-plan-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');const list=$('#inbox-list');list.parentElement.insertBefore(action,list);list.parentElement.insertBefore(status,list);}
+    $('#plan-inbox-ai').disabled=!inbox.length;
     $('#calendar-subtitle').textContent=mode==='week'?'Weekly timetable':mode==='month'?'Monthly overview':'Daily list';
     $('#calendar-period').textContent=mode==='month'?label(month,{month:'long',year:'numeric'}):label(days[0])+' — '+label(days[6]);
     $('#semester-caption').textContent=label(s.start)+' — '+label(s.end)+' · '+s.end.slice(0,4);
@@ -108,6 +111,40 @@ export function initializeSemesterPlanner(userId, onChange = () => {}, {view='pl
   // A blank cell opens the same editor as the keyboard-accessible + Task action.
   root.addEventListener('dblclick',e=>{const column=e.target.closest('[data-slot-date]');if(column&&!e.target.closest('button')){const minute=Math.min(1410,Math.floor((e.clientY-column.getBoundingClientRect().top)/52*4)*15);openTask(null,column.dataset.slotDate,clock(Math.max(0,minute)));}});
   $('#calendar-search').oninput=e=>{query=e.target.value.trim().toLocaleLowerCase();refresh();};
+  let proposedSchedule=[];
+  async function planInboxTasks(){
+    const button=$('#plan-inbox-ai'),status=$('#inbox-plan-status');
+    const tasks=ownedTasks().filter(task=>!task.completed&&!task.planned_date);
+    if(!tasks.length){status.textContent='There are no unplanned tasks in your inbox.';return;}
+    button.disabled=true;status.textContent='Planning all inbox tasks…';
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),55000);
+    try{
+      const response=await fetch('/api/schedule',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'create',tasks,settings:getState().settings?.[userId]||{}})});
+      const result=await response.json().catch(()=>null);
+      if(!response.ok||!result?.success)throw new Error(result?.message||'Could not create a schedule. Please try again.');
+      if(!Array.isArray(result.schedule)||!['openai-compatible','rules'].includes(result.provider))throw new Error('The schedule response was invalid.');
+      const taskById=new Map(tasks.map(task=>[task.id,task])),assigned=new Set();
+      proposedSchedule=result.schedule.map(item=>{
+        if(!item||typeof item.task_id!=='string'||!taskById.has(item.task_id)||assigned.has(item.task_id)||!/^\d{4}-\d{2}-\d{2}$/.test(item.planned_date))throw new Error('The schedule response included an invalid task or date.');
+        assigned.add(item.task_id);
+        return {taskId:item.task_id,date:item.planned_date,reason:typeof item.reason==='string'?item.reason:''};
+      });
+      const overflow=tasks.length-proposedSchedule.length;
+      $('#ai-schedule-status').textContent=result.provider==='openai-compatible'?'AI recommended dates for the entire inbox batch.':'AI is not configured; this is a rules-based preview.';
+      $('#ai-schedule-preview').innerHTML=proposedSchedule.map(item=>{const task=taskById.get(item.taskId),project=getState().projects.find(project=>project.id===task.project_id&&project.user_id===userId);return `<div class="import-row ai-schedule-row"><strong>${esc(item.date)} · ${esc(task.title)}</strong><span>${esc(project?.name||'Personal')} · ${esc(task.priority||'medium')} priority</span>${item.reason?`<small>${esc(item.reason)}</small>`:''}</div>`;}).join('')+(overflow?`<p class="calendar-hint">${overflow} task(s) remain in Inbox because the 14-day daily limit was reached.</p>`:'')||'<p class="calendar-empty">No tasks could be scheduled.</p>';
+      $('#apply-ai-schedule').disabled=!proposedSchedule.length;
+      status.textContent='';
+      $('#calendar-ai-schedule').showModal();
+    }catch(error){status.textContent=error.name==='AbortError'?'The AI request timed out. Try again.':error.message;}
+    finally{clearTimeout(timer);button.disabled=false;}
+  }
+  $('#apply-ai-schedule').onclick=()=>{
+    const currentTasks=new Map(ownedTasks().filter(task=>!task.completed&&!task.planned_date).map(task=>[task.id,task]));
+    if(proposedSchedule.some(item=>!currentTasks.has(item.taskId))){$('#calendar-ai-schedule').close();toast('Inbox changed. Review a new recommendation.');refresh();return;}
+    if(write(state=>{for(const item of proposedSchedule){const task=state.tasks.find(task=>task.id===item.taskId&&task.user_id===userId);if(!task||task.completed||task.planned_date)throw new Error('Inbox changed. Review a new recommendation.');task.planned_date=item.date;task.updated_at=new Date().toISOString();}})){
+      $('#calendar-ai-schedule').close();toast(proposedSchedule.length+' tasks scheduled');proposedSchedule=[];
+    }
+  };
   $('#quick-task-open').onclick=()=>openTask();
   window.addEventListener('storage',e=>{if(e.key==='projectflow-demo-state')refresh();});
   refresh();return {refresh};

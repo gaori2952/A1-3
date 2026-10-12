@@ -23,7 +23,7 @@ Serverless Function은 요청이 들어올 때 서버 코드를 실행하는 방
 | --- | --- | --- |
 | /api/analyze | POST | AI 프로젝트 분석 |
 | /api/starter_plan | POST | AI 실행 일정 추천 |
-| /api/schedule | POST | 규칙 기반 2주 일정 |
+| /api/schedule | POST | Inbox 미계획 작업 묶음의 AI 2주 일정 추천 (키 미설정 시 규칙 기반) |
 | /api/canvas_sync | POST | 요청에 포함된 개인 API 토큰으로 과제 조회 |
 
 Python 진입점이 일반 페이지 요청도 받기 때문에 api/index.py에서 허용한 HTML·CSS·JS를 제공하고, .env와 Python 소스 파일의 공개 접근은 차단합니다.
@@ -32,6 +32,8 @@ Python 진입점이 일반 페이지 요청도 받기 때문에 api/index.py에�
 브라우저 코드에 키를 넣으면 방문자가 개발자 도구로 확인할 수 있습니다. 키가 유출되면 무단 호출과 비용·쿼터 소진이 발생할 수 있습니다.
 
 OPENAI_API_KEY는 서버 환경 변수에 설정합니다. Canvas 토큰은 사용자가 조회할 때만 입력하며 서버와 브라우저에 저장하지 않습니다. 코드 공유와 키 교체는 분리되며 실제 키는 저장소와 증빙에 포함하지 않습니다.
+
+일정 추천은 Inbox의 미완료·미계획 Task ID, 제목, 우선순위, 마감일만 AI 제공자에 전달합니다. 응답은 기존 Task ID만 사용할 수 있고 14일 범위, 일일 한도, 주말 설정, 마감일을 서버에서 검증한 뒤 저장합니다.
 
 ## 로컬과 배포 환경
 로컬은 dev_server.py를 실행한 컴퓨터의 localhost:8000에서 동작합니다. 배포는 Vercel HTTPS URL에서 동작하고 키도 Vercel 환경 변수로 따로 설정합니다. 로컬에서 설정한 변수가 배포 환경에 자동 복사되지는 않습니다.

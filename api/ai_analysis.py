@@ -49,7 +49,12 @@ def normalize_input(payload):
         for item in items:
             if not isinstance(item, dict):
                 raise AnalysisError(400, "INVALID_INPUT", "작업 또는 이슈 형식을 확인해주세요.")
-            cleaned.append({key: clean_text(item.get(key, "") or "", "작업·이슈 내용", 500) for key in keys})
+            normalized_item = {key: clean_text(item.get(key, "") or "", "작업·이슈 내용", 500) for key in keys}
+            if field == "remaining_tasks":
+                for optional_key in ("id", "due_date"):
+                    if optional_key in item:
+                        normalized_item[optional_key] = clean_text(item.get(optional_key) or "", "작업·이슈 내용", 200)
+            cleaned.append(normalized_item)
         result[field] = cleaned
     return result
 
