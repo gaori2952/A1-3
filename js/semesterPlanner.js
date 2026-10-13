@@ -59,7 +59,7 @@ export function initializeSemesterPlanner(userId, onChange = () => {}, {view='pl
     const late=ownedTasks().filter(t=>!t.completed&&((t.due_date&&t.due_date<today)||(t.planned_date&&t.planned_date<today)));$('#calendar-overdue').hidden=!late.length;$('#calendar-overdue-count').textContent=late.length;$('#calendar-overdue-list').innerHTML=late.map(t=>row({...t,source:'task',kind:'task',date:t.planned_date||t.due_date})).join('');
     const inbox=ownedTasks().filter(t=>!t.completed&&!t.planned_date&&(!query||t.title.toLocaleLowerCase().includes(query)));
     $('#inbox-count').textContent=inbox.length;$('#inbox-list').innerHTML=inbox.map(t=>row({...t,source:'task',kind:'task',date:selected})).join('')||'<p class="calendar-empty">All caught up.</p>';
-    if(!$('#plan-inbox-ai')){const action=document.createElement('button'),status=document.createElement('p');action.type='button';action.className='cal-button';action.id='plan-inbox-ai';action.textContent='Plan inbox with AI';action.onclick=planInboxTasks;status.id='inbox-plan-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');const list=$('#inbox-list');list.parentElement.insertBefore(action,list);list.parentElement.insertBefore(status,list);}
+    if(!$('#plan-inbox-ai')){const action=document.createElement('button');action.type='button';action.className='cal-button';action.id='plan-inbox-ai';action.textContent='Plan inbox with AI';action.onclick=()=>planInboxTasks(action);const list=$('#inbox-list');list.parentElement.insertBefore(action,list);}
     $('#plan-inbox-ai').disabled=!inbox.length;
     $('#calendar-subtitle').textContent=mode==='week'?'Weekly timetable':mode==='month'?'Monthly overview':'Daily list';
     $('#calendar-period').textContent=mode==='month'?label(month,{month:'long',year:'numeric'}):label(days[0])+' — '+label(days[6]);
@@ -112,9 +112,12 @@ export function initializeSemesterPlanner(userId, onChange = () => {}, {view='pl
   root.addEventListener('dblclick',e=>{const column=e.target.closest('[data-slot-date]');if(column&&!e.target.closest('button')){const minute=Math.min(1410,Math.floor((e.clientY-column.getBoundingClientRect().top)/52*4)*15);openTask(null,column.dataset.slotDate,clock(Math.max(0,minute)));}});
   $('#calendar-search').oninput=e=>{query=e.target.value.trim().toLocaleLowerCase();refresh();};
   let proposedSchedule=[];
-  async function planInboxTasks(){
-    const button=$('#plan-inbox-ai'),status=$('#inbox-plan-status');
+  async function planInboxTasks(button=$('#plan-inbox-ai')){
+    const status=$('#ai-schedule-status'),dialog=$('#calendar-ai-schedule');
     const tasks=ownedTasks().filter(task=>!task.completed&&!task.planned_date);
+    $('#ai-schedule-preview').innerHTML='';
+    $('#apply-ai-schedule').disabled=true;
+    dialog.showModal();
     if(!tasks.length){status.textContent='There are no unplanned tasks in your inbox.';return;}
     button.disabled=true;status.textContent='Planning all inbox tasks…';
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),55000);
@@ -133,8 +136,6 @@ export function initializeSemesterPlanner(userId, onChange = () => {}, {view='pl
       $('#ai-schedule-status').textContent=result.provider==='openai-compatible'?'AI recommended dates for the entire inbox batch.':'AI is not configured; this is a rules-based preview.';
       $('#ai-schedule-preview').innerHTML=proposedSchedule.map(item=>{const task=taskById.get(item.taskId),project=getState().projects.find(project=>project.id===task.project_id&&project.user_id===userId);return `<div class="import-row ai-schedule-row"><strong>${esc(item.date)} · ${esc(task.title)}</strong><span>${esc(project?.name||'Personal')} · ${esc(task.priority||'medium')} priority</span>${item.reason?`<small>${esc(item.reason)}</small>`:''}</div>`;}).join('')+(overflow?`<p class="calendar-hint">${overflow} task(s) remain in Inbox because the 14-day daily limit was reached.</p>`:'')||'<p class="calendar-empty">No tasks could be scheduled.</p>';
       $('#apply-ai-schedule').disabled=!proposedSchedule.length;
-      status.textContent='';
-      $('#calendar-ai-schedule').showModal();
     }catch(error){status.textContent=error.name==='AbortError'?'The AI request timed out. Try again.':error.message;}
     finally{clearTimeout(timer);button.disabled=false;}
   }
@@ -147,5 +148,5 @@ export function initializeSemesterPlanner(userId, onChange = () => {}, {view='pl
   };
   $('#quick-task-open').onclick=()=>openTask();
   window.addEventListener('storage',e=>{if(e.key==='projectflow-demo-state')refresh();});
-  refresh();return {refresh};
+  refresh();return {refresh,planInboxTasks};
 }
