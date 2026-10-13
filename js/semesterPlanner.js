@@ -115,10 +115,11 @@ export function initializeSemesterPlanner(userId, onChange = () => {}, {view='pl
   async function planInboxTasks(button=$('#plan-inbox-ai')){
     const status=$('#ai-schedule-status'),dialog=$('#calendar-ai-schedule');
     const tasks=ownedTasks().filter(task=>!task.completed&&!task.planned_date);
+    if(!tasks.length){if(button.id==='ai-plan-inbox')$('#ai-inbox-empty').hidden=false;else toast('Add Inbox tasks without dates before scheduling them together.');return;}
+    $('#ai-inbox-empty').hidden=true;
     $('#ai-schedule-preview').innerHTML='';
     $('#apply-ai-schedule').disabled=true;
     dialog.showModal();
-    if(!tasks.length){status.textContent='There are no unplanned tasks in your inbox.';return;}
     button.disabled=true;status.textContent='Planning all inbox tasks…';
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),55000);
     try{
@@ -148,5 +149,5 @@ export function initializeSemesterPlanner(userId, onChange = () => {}, {view='pl
   };
   $('#quick-task-open').onclick=()=>openTask();
   window.addEventListener('storage',e=>{if(e.key==='projectflow-demo-state')refresh();});
-  refresh();return {refresh,planInboxTasks};
+  refresh();return {refresh,planInboxTasks,addInboxTask:()=>openTask(null,'')};
 }
